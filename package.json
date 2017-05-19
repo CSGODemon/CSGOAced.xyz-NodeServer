@@ -1,0 +1,23 @@
+{
+  "name": "csgoaced",
+  "version": "0.0.1",
+  "description": "From Champions to Champions. Join us and start winning skins!",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CSGOAced/CSGOAced.xyz-NodeServer.git"
+  },
+  "author": "Tiago Severino",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CSGOAced/CSGOAced.xyz-NodeServer/issues"
+  },
+  "homepage": "https://github.com/CSGOAced/CSGOAced.xyz-NodeServer#readme",
+  "dependencies": {
+    "express": "^4.15.2",
+    "socket.io": "^2.0.1"
+  }
+}
