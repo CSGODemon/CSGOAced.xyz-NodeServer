@@ -14,11 +14,27 @@ function getSpin(player) {
 	}
 }
 
+var bets = [];
+
+var bet = function(name, avatar1, avatar2, ammount){
+	this.id = bets.length;
+	this.name = name;
+	this.avatar1 = avatar1;
+	this.avatar2 = avatar2;
+	this.ammount = ammount;
+}
+
+bets.push(new bet("Onireves", "http://localhost/CSGOAced/img/avatar1.jpg", "http://localhost/CSGOAced/img/avatar2.jpg", 500));
+bets.push(new bet("SuperBlackdino", "http://localhost/CSGOAced/img/avatar2.jpg", "http://localhost/CSGOAced/img/avatar1.jpg", 999));
+
 io.on('connection', function(socket){
 	socket.on('PlaceBet', function(BetID){
 		socket.emit('FlipCoin', BetID, getSpin(Math.floor(Math.random()*2)));
 	});
+
+	socket.emit('DisplayBets', bets);
 });
+
 
 http.listen(3000, function(){
 	console.log('listening on *:3000');
