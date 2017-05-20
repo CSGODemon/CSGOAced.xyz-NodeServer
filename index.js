@@ -24,8 +24,8 @@ var bet = function(name, avatar1, avatar2, ammount){
 	this.ammount = ammount;
 }
 
-bets.push(new bet("Onireves", "http://localhost/CSGOAced/img/avatar1.jpg", "http://localhost/CSGOAced/img/avatar2.jpg", 500));
-bets.push(new bet("SuperBlackdino", "http://localhost/CSGOAced/img/avatar2.jpg", "http://localhost/CSGOAced/img/avatar1.jpg", 999));
+bets.push(new bet("Onireves", "http://www.csgoaced.xyz/img/avatar1.jpg", "http://www.csgoaced.xyz/img/avatar2.jpg", 500));
+bets.push(new bet("SuperBlackdino", "http://www.csgoaced.xyz/img/avatar2.jpg", "http://www.csgoaced.xyz/img/avatar1.jpg", 999));
 
 io.on('connection', function(socket){
 	socket.on('PlaceBet', function(BetID){
