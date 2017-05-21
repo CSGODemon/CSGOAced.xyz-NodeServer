@@ -1,6 +1,30 @@
+var fs = require( 'fs' );
 var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var httpsOptions = { 
+	key: fs.readFileSync('certificates/server.key'), 
+	cert: fs.readFileSync('certificates/final.crt')
+};        
+
+var secureServer = require('https').createServer(httpsOptions, app);
+
+io = require('socket.io').listen(
+	secureServer,{
+		pingTimeout: 7000, 
+		pingInterval: 10000
+	}
+);
+
+io.set(
+	"transports", [
+		"xhr-polling",
+		"websocket",
+		"polling", 
+		"htmlfile"]
+);
+
+secureServer.listen(3000, function(){
+	console.log('Listening on *:3000');
+});
 
 //Coin Flip
 var player1 = ['animation1080','animation1440','animation1800','animation2160'];
@@ -33,9 +57,4 @@ io.on('connection', function(socket){
 	});
 
 	socket.emit('DisplayBets', bets);
-});
-
-
-http.listen(3000, function(){
-	console.log('listening on *:3000');
 });
