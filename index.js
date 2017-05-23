@@ -1,6 +1,4 @@
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var io = require('socket.io').listen(3000);
 
 var bets = [];
 
@@ -18,14 +16,13 @@ var Bet = function(name1, name2, avatar1, avatar2, ammount){
 var name1 = "Onireves";
 var name2 = "SuperBlackdino";
 var ammout = 900;
-var avatar1 = "http://localhost/CSGOAced/img/avatar1.jpg";
-var avatar2 = "http://localhost/CSGOAced/img/avatar2.jpg";
+var avatar1 = "https://www.csgoaced.xyz/img/avatar1.jpg";
+var avatar2 = "https://www.csgoaced.xyz/img/avatar2.jpg";
 
 bets.push(new Bet(name1, name2, avatar1, avatar2, ammout));
 bets.push(new Bet(name2, name1, avatar2, avatar1, ammout));
 
 io.on('connection', function(socket){
-
 	socket.emit('show place bet');
 
 	//Display Active Bets
@@ -50,10 +47,5 @@ io.on('connection', function(socket){
 				}
 			}
 		});
-	});	
-});
-
-
-http.listen(3000, function(){
-	console.log('Listening on *:3000');
+	});
 });
