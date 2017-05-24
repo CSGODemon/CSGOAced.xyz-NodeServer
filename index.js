@@ -21,6 +21,14 @@ var avatar2 = "https://www.csgoaced.xyz/img/avatar2.jpg";
 
 bets.push(new Bet(name1, avatar1, ammout));
 bets.push(new Bet(name2, avatar2, ammout));
+bets.push(new Bet(name1, avatar1, ammout));
+bets.push(new Bet(name2, avatar2, ammout));
+bets.push(new Bet(name1, avatar1, ammout));
+bets.push(new Bet(name2, avatar2, ammout));
+bets.push(new Bet(name1, avatar1, ammout));
+bets.push(new Bet(name2, avatar2, ammout));
+bets.push(new Bet(name1, avatar1, ammout));
+bets.push(new Bet(name2, avatar2, ammout));
 
 io.on('connection', function(socket){
 	socket.emit('show place bet');
@@ -32,8 +40,10 @@ io.on('connection', function(socket){
 		}
 	});
 
-	socket.on('place bet', function(User){
-		var bet = new Bet(User.name, User.avatar, ammout);
+	socket.on('place bet', function(MyBet){
+		if (isNaN(MyBet.ammount)){ return false; }
+
+		var bet = new Bet(MyBet.name, MyBet.avatar, MyBet.ammount);
 		bets.push(bet);
 		io.emit('display bet', bet);
 	});
