@@ -19,6 +19,11 @@ var Message = function(avatar, msg) {
 	this.msg = msg;
 }
 
+var bot = {
+	name: "CSGOAced.xyz Bot",
+	avatar:"https://www.csgoaced.xyz/img/icon.png"
+}
+
 var name1 = "Onireves";
 var name2 = "SuperBlackdino";
 var ammout = 900;
@@ -38,6 +43,7 @@ bets.push(new Bet(name2, avatar2, ammout));
 
 io.on('connection', function(socket){
 	socket.emit('show place bet');
+	socket.emit('message', bot, "Welcome to CSGOAced!");
 
 	//Display Active Bets
 	bets.forEach(function(bet){
