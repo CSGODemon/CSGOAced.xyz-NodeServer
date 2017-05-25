@@ -1,6 +1,7 @@
 var io = require('socket.io').listen(3000);
 
 var bets = [];
+var messages = [];
 
 var Bet = function(name, avatar, ammount){
 	this.id = bets.length;
@@ -11,6 +12,11 @@ var Bet = function(name, avatar, ammount){
 	this.ammount = ammount;
 	this.winner = Math.floor(Math.random()*2);
 	this.isFinished = false;
+}
+
+var Message = function(avatar, msg) {
+	this.avatar = avatar;
+	this.msg = msg;
 }
 
 var name1 = "Onireves";
@@ -62,5 +68,12 @@ io.on('connection', function(socket){
 				}
 			}
 		});
+	});
+
+	socket.on('message', function(user, msg){
+		message = new Message(user.avatar, msg);
+		messages.push(message);
+
+		io.emit('message', user, msg);
 	});
 });
