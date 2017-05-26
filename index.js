@@ -65,10 +65,15 @@ io.on('connection', function(socket){
 	});
 
 	socket.on('message', function(user, msg){
-		message = new Message(user.avatar, msg);
-		messages.push(message);
+		if (user.name.length > 0){
+			message = new Message(user.avatar, msg);
+			messages.push(message);
 
-		io.emit('message', user, msg);
+			io.emit('message', user, msg);
+		}else{
+			socket.emit('message', bot, "Login to Send Messages");
+		}
+		
 	});
 
 	socket.on('disconnect', function(){
