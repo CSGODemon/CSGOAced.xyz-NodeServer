@@ -26,23 +26,6 @@ var bot = {
 
 UsersOnline = 0;
 
-var name1 = "Onireves";
-var name2 = "SuperBlackdino";
-var ammout = 900;
-var avatar1 = "https://www.csgoaced.xyz/img/avatar1.jpg";
-var avatar2 = "https://www.csgoaced.xyz/img/avatar2.jpg";
-
-bets.push(new Bet(name1, avatar1, ammout));
-bets.push(new Bet(name2, avatar2, ammout));
-bets.push(new Bet(name1, avatar1, ammout));
-bets.push(new Bet(name2, avatar2, ammout));
-bets.push(new Bet(name1, avatar1, ammout));
-bets.push(new Bet(name2, avatar2, ammout));
-bets.push(new Bet(name1, avatar1, ammout));
-bets.push(new Bet(name2, avatar2, ammout));
-bets.push(new Bet(name1, avatar1, ammout));
-bets.push(new Bet(name2, avatar2, ammout));
-
 io.on('connection', function(socket){
 	UsersOnline++;
 	io.emit('update online', UsersOnline);
