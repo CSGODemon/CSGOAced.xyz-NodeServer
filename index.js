@@ -24,6 +24,8 @@ var bot = {
 	avatar:"https://www.csgoaced.xyz/img/icon.png"
 }
 
+UsersOnline = 0;
+
 var name1 = "Onireves";
 var name2 = "SuperBlackdino";
 var ammout = 900;
@@ -42,6 +44,9 @@ bets.push(new Bet(name1, avatar1, ammout));
 bets.push(new Bet(name2, avatar2, ammout));
 
 io.on('connection', function(socket){
+	UsersOnline++;
+	io.emit('update online', UsersOnline);
+
 	socket.emit('show place bet');
 	socket.emit('message', bot, "Welcome to CSGOAced!");
 
@@ -81,5 +86,10 @@ io.on('connection', function(socket){
 		messages.push(message);
 
 		io.emit('message', user, msg);
+	});
+
+	socket.on('disconnect', function(){
+		UsersOnline--;
+		io.emit('update online', UsersOnline);
 	});
 });
