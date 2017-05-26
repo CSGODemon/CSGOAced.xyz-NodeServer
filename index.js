@@ -1,5 +1,15 @@
 var io = require('socket.io').listen(3000);
 
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+	host     : 'localhost',
+	user     : 'root',
+	password : '',
+	database : 'CSGOAced'
+});
+
+connection.connect();
+
 var bets = [];
 var messages = [];
 
@@ -69,7 +79,10 @@ io.on('connection', function(socket){
 			message = new Message(user.avatar, msg);
 			messages.push(message);
 
-			io.emit('message', user, msg);
+				connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (${user.id}, ${msg})`, function (error, results, fields) {
+					if (error) throw error;
+					io.emit('message', user, msg);
+				});
 		}else{
 			socket.emit('message', bot, "Login to Send Messages");
 		}

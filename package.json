@@ -18,6 +18,7 @@
   "homepage": "https://github.com/CSGOAced/CSGOAced.xyz-NodeServer#readme",
   "dependencies": {
     "express": "^4.15.2",
+    "mysql": "github:mysqljs/mysql",
     "socket.io": "^2.0.1"
   }
 }
