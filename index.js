@@ -100,12 +100,14 @@ io.on('connection', function(socket){
 				socket.on('referal', function(refcode){
 					connection.query(`UPDATE Users SET RefCode = '${refcode}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
 						if (error) throw error;
+						SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
 					});
 				});
 
 				socket.on('trade_url', function(trade_url){
 					connection.query(`UPDATE Users SET Trade_URL = '${trade_url}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
 						if (error) throw error;
+						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
 					});
 				});
 
@@ -158,6 +160,24 @@ io.on('connection', function(socket){
 			buttons: {
 				ok: {
 					btnClass: 'btn-red',
+					keys: ['enter'],
+					action: function(){
+					}
+				}
+			}
+		});
+	}
+
+	function SendSuccess(Title, Content){
+		socket.emit('alert', {
+			closeIcon: true,
+			closeIconClass: 'fa fa-close',
+			backgroundDismiss: true,
+			title: Title,
+			content: Content,
+			buttons: {
+				ok: {
+					btnClass: 'btn-green',
 					keys: ['enter'],
 					action: function(){
 					}
