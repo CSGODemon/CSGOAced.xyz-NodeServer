@@ -97,6 +97,12 @@ io.on('connection', function(socket){
 					});
 				});
 
+				socket.on('referal', function(refcode){
+					connection.query(`UPDATE Users SET RefCode = '${refcode}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
+						if (error) throw error;
+					});
+				});
+
 				socket.on('trade_url', function(trade_url){
 					connection.query(`UPDATE Users SET Trade_URL = '${trade_url}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
 						if (error) throw error;
