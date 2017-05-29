@@ -88,6 +88,8 @@ io.on('connection', function(socket){
 									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES ('${bet.winnerUID}', '${bet.ammount}', '${bet.fee}');`, function (error, results, fields) {
 										io.emit('flip', bet);
 									});
+								}else{
+									SendAlert("Bet Error", "Can't place a bet against yourself!");
 								}
 								return false;
 							}
@@ -104,15 +106,15 @@ io.on('connection', function(socket){
 				});
 			}else{
 				socket.on('place bet', function(){
-					BotMSG("Login to Place Bets");
+					SendAlert("No Login", "Login to Place Bets");
 				});
 
 				socket.on('join bet', function(){
-					BotMSG("Login to Join Bets");
+					SendAlert("No Login", "Login to Join Bets");
 				});
 
 				socket.on('message', function(){
-					BotMSG("Login to Send Messages");
+					SendAlert("No Login", "Login to Send Messages!");
 				});
 			}
 
@@ -132,5 +134,23 @@ io.on('connection', function(socket){
 
 	function BotMSG(msg){
 		socket.emit('message', { avatar: bot.avatar, text: msg });
+	}
+
+	function SendAlert(Title, Content){
+		socket.emit('alert', {
+			closeIcon: true,
+			closeIconClass: 'fa fa-close',
+			backgroundDismiss: true,
+			title: Title,
+			content: Content,
+			buttons: {
+				ok: {
+					btnClass: 'btn-red',
+					keys: ['enter'],
+					action: function(){
+					}
+				}
+			}
+		});
 	}
 });
