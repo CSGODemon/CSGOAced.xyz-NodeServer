@@ -1,11 +1,13 @@
+const Settings = require('./config.json');
+
 var io = require('socket.io').listen(3000);
 
 var mysql      = require('mysql');
 var connection = mysql.createConnection({
-	host     : 'localhost',
-	user     : 'root',
-	password : '',
-	database : 'CSGOAced'
+	host     : Settings.Database.Host,
+	user     : Settings.Database.User,
+	password : Settings.Database.Password,
+	database : Settings.Database.Database
 });
 
 connection.connect();
@@ -30,8 +32,8 @@ var Message = function(avatar, msg) {
 }
 
 var bot = {
-	name: "CSGOAced.xyz Bot",
-	avatar:"https://www.csgoaced.xyz/img/icon.png"
+	name: Settings.Bot.Name,
+	avatar: Settings.Bot.Avatar
 }
 
 var UserInfo = function(){

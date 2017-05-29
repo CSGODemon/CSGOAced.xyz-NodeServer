@@ -1,0 +1,12 @@
+{
+	"Database": {
+		"Host": "localhost",
+		"User": "root",
+		"Password": "",
+		"Database" : "CSGOAced"
+	},
+	"Bot":{
+		"Name": "CSGOAced.xyz Bot",
+		"Avatar": "https://www.csgoaced.xyz/img/icon.png"
+	}
+}
