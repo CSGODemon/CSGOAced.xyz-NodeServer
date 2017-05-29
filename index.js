@@ -107,15 +107,15 @@ io.on('connection', function(socket){
 					});
 				});
 			}else{
-				socket.on('place bet', function(MyBet){
+				socket.on('place bet', function(){
 					socket.emit('message', bot, "Login to Place Bets");
 				});
 
-				socket.on('join bet', function(MyBet){
+				socket.on('join bet', function(){
 					socket.emit('message', bot, "Login to Join Bets");
 				});
 
-				socket.on('message', function(user, msg){
+				socket.on('message', function(){
 					socket.emit('message', bot, "Login to Send Messages");
 				});
 			}
