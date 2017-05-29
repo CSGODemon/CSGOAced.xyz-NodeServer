@@ -79,7 +79,7 @@ io.on('connection', function(socket){
 			message = new Message(user.avatar, msg);
 			messages.push(message);
 
-				connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (${user.id}, ${msg})`, function (error, results, fields) {
+				connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${user.id}', '${msg}')`, function (error, results, fields) {
 					if (error) throw error;
 					io.emit('message', user, msg);
 				});
