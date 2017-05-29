@@ -8,5 +8,8 @@
 	"Bot":{
 		"Name": "CSGOAced.xyz Bot",
 		"Avatar": "https://www.csgoaced.xyz/img/icon.png"
-	}
+	},
+    "Coinflip":{
+        "Fee": 0.1
+    }
 }

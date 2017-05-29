@@ -23,6 +23,7 @@ var Bet = function(UID, avatar, ammount){
 	this.avatar2;
 	this.ammount = ammount;
 	this.winner = Math.floor(Math.random()*2);
+	this.fee;
 	this.isFinished = false;
 }
 
@@ -75,10 +76,18 @@ io.on('connection', function(socket){
 								if (bet.UID1 != CUser.id){
 									bet.avatar2 = CUser.avatar;
 									bet.UID2 = CUser.id;
+
 									bet.ammount *= 2;
+									bet.fee = parseInt(bet.ammount * Settings.Coinflip.Fee);
+									bet.ammount -= bet.fee;
+
 									bet.isFinished =  true;
 
-									io.emit('flip', bet);
+									bet.winnerUID = (bet.winner == 1) ? bet.UID1 : bet.UID2;
+
+									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES ('${bet.winnerUID}', '${bet.ammount}', '${bet.fee}');`, function (error, results, fields) {
+										io.emit('flip', bet);
+									});
 								}
 								return false;
 							}
