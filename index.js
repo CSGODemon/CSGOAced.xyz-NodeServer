@@ -34,59 +34,97 @@ var bot = {
 	avatar:"https://www.csgoaced.xyz/img/icon.png"
 }
 
+var UserInfo = function(){
+	this.id;
+	this.Steam64;
+	this.PrivateKey;
+	this.name;
+	this.avatar;
+	this.IsAuth = false;
+}
+
 UsersOnline = 0;
 
 io.on('connection', function(socket){
+
+	CUser = new UserInfo();
+
 	UsersOnline++;
 	io.emit('update online', UsersOnline);
 
-	socket.emit('show place bet');
 	socket.emit('message', bot, "Welcome to CSGOAced!");
 
-	//Display Active Bets
-	bets.forEach(function(bet){
-		if (!bet.isFinished){
-			socket.emit('display bet', bet);
-		}
-	});
+	socket.emit('auth user');
 
-	socket.on('place bet', function(MyBet){
-		if (isNaN(MyBet.ammount)){ return false; }
+	socket.on('auth user', function(User){
+		connection.query(`SELECT Steam64 FROM Users WHERE ID='${User.id}' AND PrivateKey='${User.PrivateKey}'`, function (error, results, fields) {
 
-		var bet = new Bet(MyBet.name, MyBet.avatar, MyBet.ammount);
-		bets.push(bet);
-		io.emit('display bet', bet);
-	});
-
-	socket.on('join bet', function(MyBet){
-		bets.forEach(function(bet){
-			if (!bet.isFinished){
-				if (bet.id == MyBet.id){
-
-					bet.avatar2 = MyBet.avatar;
-					bet.name2 = MyBet.name;
-					bet.ammount *= 2;
-					bet.isFinished =  true;
-
-					io.emit('flip', bet);
-				}
+			for (var row in results) {
+				CUser.id = User.id;
+				CUser.Steam64 = results[row].Steam64;
+				CUser.PrivateKey = User.PrivateKey;
+				CUser.name = User.name;
+				CUser.avatar = User.avatar;
+				CUser.IsAuth = true;
 			}
-		});
-	});
 
-	socket.on('message', function(user, msg){
-		if (user.name.length > 0){
-			message = new Message(user.avatar, msg);
-			messages.push(message);
+			if (CUser.IsAuth){
+				socket.emit('show place bet');
 
-				connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${user.id}', '${msg}')`, function (error, results, fields) {
-					if (error) throw error;
-					io.emit('message', user, msg);
+				socket.on('place bet', function(MyBet){
+					if (isNaN(MyBet.ammount)){ return false; }
+
+					var bet = new Bet(MyBet.name, MyBet.avatar, MyBet.ammount);
+					bets.push(bet);
+					io.emit('display bet', bet);
 				});
-		}else{
-			socket.emit('message', bot, "Login to Send Messages");
-		}
-		
+
+				socket.on('join bet', function(MyBet){
+					bets.forEach(function(bet){
+						if (!bet.isFinished){
+							if (bet.id == MyBet.id){
+
+								bet.avatar2 = MyBet.avatar;
+								bet.name2 = MyBet.name;
+								bet.ammount *= 2;
+								bet.isFinished =  true;
+
+								io.emit('flip', bet);
+							}
+						}
+					});
+				});
+
+				socket.on('message', function(user, msg){
+					message = new Message(user.avatar, msg);
+					messages.push(message);
+
+					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${user.id}', '${msg}')`, function (error, results, fields) {
+						if (error) throw error;
+						io.emit('message', user, msg);
+					});
+				});
+			}else{
+				socket.on('place bet', function(MyBet){
+					socket.emit('message', bot, "Login to Place Bets");
+				});
+
+				socket.on('join bet', function(MyBet){
+					socket.emit('message', bot, "Login to Join Bets");
+				});
+
+				socket.on('message', function(user, msg){
+					socket.emit('message', bot, "Login to Send Messages");
+				});
+			}
+
+			//Display Active Bets
+			bets.forEach(function(bet){
+				if (!bet.isFinished){
+					socket.emit('display bet', bet);
+				}
+			});
+		});
 	});
 
 	socket.on('disconnect', function(){
