@@ -97,6 +97,12 @@ io.on('connection', function(socket){
 					});
 				});
 
+				socket.on('trade_url', function(trade_url){
+					connection.query(`UPDATE Users SET Trade_URL = '${trade_url}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
+						if (error) throw error;
+					});
+				});
+
 				socket.on('message', function(msg){
 
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${CUser.id}', '${msg}')`, function (error, results, fields) {
