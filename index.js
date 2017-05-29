@@ -15,20 +15,15 @@ connection.connect();
 var bets = [];
 var messages = [];
 
-var Bet = function(name, avatar, ammount){
+var Bet = function(UID, avatar, ammount){
 	this.id = bets.length;
-	this.name1 = name;
-	this.name2 = "";
+	this.UID1 = UID;
+	this.UID2;
 	this.avatar1 = avatar;
-	this.avatar2 = "";
+	this.avatar2;
 	this.ammount = ammount;
 	this.winner = Math.floor(Math.random()*2);
 	this.isFinished = false;
-}
-
-var Message = function(avatar, msg) {
-	this.avatar = avatar;
-	this.msg = msg;
 }
 
 var bot = {
@@ -36,30 +31,21 @@ var bot = {
 	avatar: Settings.Bot.Avatar
 }
 
-var UserInfo = function(){
-	this.id;
-	this.Steam64;
-	this.PrivateKey;
-	this.name;
-	this.avatar;
-	this.IsAuth = false;
-}
-
 UsersOnline = 0;
 
 io.on('connection', function(socket){
 
-	CUser = new UserInfo();
-
 	UsersOnline++;
 	io.emit('update online', UsersOnline);
 
-	socket.emit('message', bot, "Welcome to CSGOAced!");
+	BotMSG("Welcome To CSGOAced!");
 
 	socket.emit('auth user');
 
 	socket.on('auth user', function(User){
 		connection.query(`SELECT Steam64 FROM Users WHERE ID='${User.id}' AND PrivateKey='${User.PrivateKey}'`, function (error, results, fields) {
+
+			var CUser = { IsAuth: false}
 
 			for (var row in results) {
 				CUser.id = User.id;
@@ -73,50 +59,51 @@ io.on('connection', function(socket){
 			if (CUser.IsAuth){
 				socket.emit('show place bet');
 
-				socket.on('place bet', function(MyBet){
-					if (isNaN(MyBet.ammount)){ return false; }
+				socket.on('place bet', function(ammount){
 
-					var bet = new Bet(MyBet.name, MyBet.avatar, MyBet.ammount);
+					if (isNaN(ammount)){ return false; }
+
+					var bet = new Bet(CUser.id, CUser.avatar, ammount);
 					bets.push(bet);
 					io.emit('display bet', bet);
 				});
 
-				socket.on('join bet', function(MyBet){
+				socket.on('join bet', function(BetID){
 					bets.forEach(function(bet){
 						if (!bet.isFinished){
-							if (bet.id == MyBet.id){
+							if (bet.id == BetID){
+								if (bet.UID1 != CUser.id){
+									bet.avatar2 = CUser.avatar;
+									bet.UID2 = CUser.id;
+									bet.ammount *= 2;
+									bet.isFinished =  true;
 
-								bet.avatar2 = MyBet.avatar;
-								bet.name2 = MyBet.name;
-								bet.ammount *= 2;
-								bet.isFinished =  true;
-
-								io.emit('flip', bet);
+									io.emit('flip', bet);
+								}
+								return false;
 							}
 						}
 					});
 				});
 
-				socket.on('message', function(user, msg){
-					message = new Message(user.avatar, msg);
-					messages.push(message);
+				socket.on('message', function(msg){
 
-					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${user.id}', '${msg}')`, function (error, results, fields) {
+					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${CUser.id}', '${msg}')`, function (error, results, fields) {
 						if (error) throw error;
-						io.emit('message', user, msg);
+						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
 				});
 			}else{
 				socket.on('place bet', function(){
-					socket.emit('message', bot, "Login to Place Bets");
+					BotMSG("Login to Place Bets");
 				});
 
 				socket.on('join bet', function(){
-					socket.emit('message', bot, "Login to Join Bets");
+					BotMSG("Login to Join Bets");
 				});
 
 				socket.on('message', function(){
-					socket.emit('message', bot, "Login to Send Messages");
+					BotMSG("Login to Send Messages");
 				});
 			}
 
@@ -133,4 +120,8 @@ io.on('connection', function(socket){
 		UsersOnline--;
 		io.emit('update online', UsersOnline);
 	});
+
+	function BotMSG(msg){
+		socket.emit('message', { avatar: bot.avatar, text: msg });
+	}
 });
