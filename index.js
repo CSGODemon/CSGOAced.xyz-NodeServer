@@ -107,6 +107,12 @@ io.on('connection', function(socket){
 					}
 				});
 
+				socket.on('coinflip history', function(){
+					connection.query(`SELECT ID, Ammount, CreateTimestamp FROM CoinflipHistory WHERE UserID='${User.id}'`, function (error, results, fields) {
+						socket.emit('coinflip history', results);
+					});
+				});
+
 				socket.on('referal', function(refcode){
 					connection.query(`UPDATE Users SET RefCode = '${refcode}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
 						if (error) throw error;
