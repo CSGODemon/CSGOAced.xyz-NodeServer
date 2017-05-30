@@ -113,6 +113,12 @@ io.on('connection', function(socket){
 					});
 				});
 
+				socket.on('freecoins', function(){
+					connection.query(`SELECT RefCode FROM Users WHERE ID='${User.id}'`, function (error, results, fields) {
+						socket.emit('freecoins', (!results[0].RefCode) ? "Your Code!" : results[0].RefCode);
+					});
+				});
+
 				socket.on('referal', function(refcode){
 					connection.query(`UPDATE Users SET RefCode = '${refcode}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
 						if (error) throw error;
