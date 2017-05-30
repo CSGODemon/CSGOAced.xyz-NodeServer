@@ -13,16 +13,21 @@ var connection = mysql.createConnection({
 connection.connect();
 
 var bets = [];
-var messages = [];
+
+var BetID = 0;
 
 var Bet = function(UID, avatar, ammount){
-	this.id = bets.length;
+	this.id = BetID;
+
+	BetID++;
+
 	this.UID1 = UID;
 	this.UID2;
 	this.avatar1 = avatar;
 	this.avatar2;
 	this.ammount = ammount;
 	this.winner;
+	this.winnerUID;
 	this.fee;
 	this.isFinished = false;
 }
@@ -70,7 +75,8 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('join bet', function(BetID){
-					bets.forEach(function(bet){
+					for (var i in bets){
+						var bet = bets[i];
 						if (!bet.isFinished){
 							if (bet.id == BetID){
 								if (bet.UID1 != CUser.id){
@@ -90,13 +96,15 @@ io.on('connection', function(socket){
 									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES ('${bet.winnerUID}', '${bet.ammount}', '${bet.fee}');`, function (error, results, fields) {
 										io.emit('flip', bet);
 									});
+
+									bets.splice(i, 1);
 								}else{
 									SendAlert("Bet Error", "Can't place a bet against yourself!");
 								}
 								return false;
 							}
 						}
-					});
+					}
 				});
 
 				socket.on('referal', function(refcode){
