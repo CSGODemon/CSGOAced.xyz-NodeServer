@@ -1,4 +1,5 @@
 const Settings = require('./config.json');
+var request = require("request");
 
 var io = require('socket.io').listen(3000);
 
@@ -49,13 +50,14 @@ io.on('connection', function(socket){
 	socket.emit('auth user');
 
 	socket.on('auth user', function(User){
-		connection.query(`SELECT Steam64 FROM Users WHERE ID='${User.id}' AND PrivateKey='${User.PrivateKey}' AND PrivateKey IS NOT NULL`, function (error, results, fields) {
+		connection.query(`SELECT Steam64, Role FROM Users WHERE ID='${User.id}' AND PrivateKey='${User.PrivateKey}' AND PrivateKey IS NOT NULL`, function (error, results, fields) {
 
 			var CUser = { IsAuth: false}
 
 			for (var row in results) {
 				CUser.id = User.id;
 				CUser.Steam64 = results[row].Steam64;
+				CUser.Role = results[row].Role;
 				CUser.PrivateKey = User.PrivateKey;
 				CUser.name = User.name;
 				CUser.avatar = User.avatar;
@@ -64,6 +66,36 @@ io.on('connection', function(socket){
 
 			if (CUser.IsAuth){
 				socket.emit('show place bet');
+
+				if (CUser.Role == "Admin"){
+					socket.on('refresh prices', function(){
+						request({
+							url: "https://api.csgofast.com/price/all",
+							json: true
+						}, function (error, response, body) {
+							if (!error && response.statusCode === 200) {
+
+								connection.query(`TRUNCATE TABLE SkinPrices;`, function (error, results, fields) {});
+
+								for (var skin in body){
+									connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName='${skin}')
+														THEN
+															INSERT INTO Skins (MarketName) VALUES ('${skin}');
+														END IF;`, function (error, results, fields) {
+									});
+
+									var BuyPrice = body[skin] * Settings.Price.BuyMultiplier + Settings.Price.BuyGap;
+									var SellPrice = body[skin] * Settings.Price.SellMultiplier + Settings.Price.SellGap;
+
+									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES ('${skin}', ${BuyPrice}, ${SellPrice});`, function (error, results, fields) {});
+								}
+								SendSuccess("Success", "Skins Price Refreshed Successfully!");
+							}else{
+								SendAlert("Error", "Error Refreshing Skins Price!");
+							}
+						})
+					});
+				}
 
 				socket.on('place bet', function(ammount){
 

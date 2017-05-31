@@ -11,5 +11,11 @@
 	},
     "Coinflip":{
         "Fee": 0.1
-    }
+    },
+	"Price":{
+		"BuyMultiplier": 100,
+		"SellMultiplier": 107,
+		"BuyGap": -3,
+		"SellGap": 3
+	}
 }
