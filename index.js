@@ -172,6 +172,11 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('trade_url', function(trade_url){
+					if(!trade_url || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
+						$.alert('Provide a valid Trade URL');
+						return false;
+					}
+
 					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
 						if (error) throw error;
 						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
@@ -183,7 +188,7 @@ io.on('connection', function(socket){
 						SendAlert("Message Lenght", "You can only write 50 characters");
 						return false;
 					}
-					
+
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
 						if (error) throw error;
 						io.emit('message', { avatar: CUser.avatar, text: msg });
