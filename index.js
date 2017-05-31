@@ -144,7 +144,7 @@ io.on('connection', function(socket){
 
 									bets.splice(i, 1);
 								}else{
-									SendAlert("Bet Error", "Can't place a bet against yourself!");
+									SendAlert("Bet Error", "<span class='glyphicon glyphicon-remove'></span> Can't place a bet against yourself");
 								}
 								return false;
 							}
