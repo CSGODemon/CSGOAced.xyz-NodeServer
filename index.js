@@ -179,6 +179,10 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('message', function(msg){
+					if (msg.length > 50){
+						SendAlert("Message Lenght", "You can only write 50 characters");
+						return false;
+					}
 					
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
 						if (error) throw error;
