@@ -50,7 +50,7 @@ io.on('connection', function(socket){
 	socket.emit('auth user');
 
 	socket.on('auth user', function(User){
-		connection.query(`SELECT Steam64, Role FROM Users WHERE ID='${User.id}' AND PrivateKey='${User.PrivateKey}' AND PrivateKey IS NOT NULL`, function (error, results, fields) {
+		connection.query(`SELECT Steam64, Role FROM Users WHERE ID = ? AND PrivateKey = ? AND PrivateKey IS NOT NULL`, [User.id, User.PrivateKey], function (error, results, fields) {
 
 			var CUser = { IsAuth: false}
 
@@ -78,16 +78,16 @@ io.on('connection', function(socket){
 								connection.query(`TRUNCATE TABLE SkinPrices;`, function (error, results, fields) {});
 
 								for (var skin in body){
-									connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName='${skin}')
+									connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName = ?)
 														THEN
-															INSERT INTO Skins (MarketName) VALUES ('${skin}');
-														END IF;`, function (error, results, fields) {
+															INSERT INTO Skins (MarketName) VALUES (?);
+														END IF;`,[skin, skin], function (error, results, fields) {
 									});
 
 									var BuyPrice = body[skin] * Settings.Price.BuyMultiplier + Settings.Price.BuyGap;
 									var SellPrice = body[skin] * Settings.Price.SellMultiplier + Settings.Price.SellGap;
 
-									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES ('${skin}', ${BuyPrice}, ${SellPrice});`, function (error, results, fields) {});
+									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice], function (error, results, fields) {});
 								}
 								SendSuccess("Success", "Skins Price Refreshed Successfully!");
 							}else{
@@ -138,7 +138,7 @@ io.on('connection', function(socket){
 
 									bet.isFinished =  true;
 
-									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES ('${bet.winnerUID}', '${bet.ammount}', '${bet.fee}');`, function (error, results, fields) {
+									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES (?, ?, ?);`, [bet.winnerUID, bet.ammount, bet.fee], function (error, results, fields) {
 										io.emit('flip', bet);
 									});
 
@@ -153,26 +153,26 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('coinflip history', function(){
-					connection.query(`SELECT ID, Ammount, CreateTimestamp FROM CoinflipHistory WHERE UserID='${User.id}'`, function (error, results, fields) {
+					connection.query(`SELECT ID, Ammount, CreateTimestamp FROM CoinflipHistory WHERE UserID = ?`,[User.id] , function (error, results, fields) {
 						socket.emit('coinflip history', results);
 					});
 				});
 
 				socket.on('freecoins', function(){
-					connection.query(`SELECT RefCode FROM Users WHERE ID='${User.id}'`, function (error, results, fields) {
+					connection.query(`SELECT RefCode FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
 						socket.emit('freecoins', (!results[0].RefCode) ? "Your Code!" : results[0].RefCode);
 					});
 				});
 
 				socket.on('referal', function(refcode){
-					connection.query(`UPDATE Users SET RefCode = '${refcode}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
+					connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?;` [refcode, CUser.id], function (error, results, fields) {
 						if (error) throw error;
 						SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
 					});
 				});
 
 				socket.on('trade_url', function(trade_url){
-					connection.query(`UPDATE Users SET Trade_URL = '${trade_url}' WHERE ID = ${CUser.id};`, function (error, results, fields) {
+					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
 						if (error) throw error;
 						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
 					});
@@ -180,7 +180,7 @@ io.on('connection', function(socket){
 
 				socket.on('message', function(msg){
 					
-					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES ('${CUser.id}', '${msg}')`, function (error, results, fields) {
+					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
 						if (error) throw error;
 						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
