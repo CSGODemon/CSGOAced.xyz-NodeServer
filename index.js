@@ -67,7 +67,20 @@ io.on('connection', function(socket){
 
 				socket.on('place bet', function(ammount){
 
-					if (isNaN(ammount)){ return false; }
+					if (isNaN(ammount)){
+						SendAlert("Invalid Number!", "Please enter a valid Number!");
+						return false;
+					}
+
+					if (ammount < 50){
+						SendAlert("Not Enought Coins!", "Minimum ammount is 50 coins!");
+						return false;
+					}
+
+					if (ammount > 100000){
+						SendAlert("Too Many Coins!", "Maximum ammount is 100000 coins!");
+						return false;
+					}
 
 					var bet = new Bet(CUser.id, CUser.avatar, ammount);
 					bets.push(bet);
