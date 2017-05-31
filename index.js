@@ -191,6 +191,29 @@ io.on('connection', function(socket){
 
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
 						if (error) throw error;
+						msg = msg.replace(new RegExp(":kappa:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/kappa.png">')
+						msg = msg.replace(new RegExp(":rip:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/rip.png">');
+						msg = msg.replace(new RegExp(":bubble:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/bubble.png">');
+						msg = msg.replace(new RegExp(":ezskins:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/ezskins.png">');
+						msg = msg.replace(new RegExp(":hype:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/hype.png">');
+						msg = msg.replace(new RegExp(":money:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/money.png">');
+						msg = msg.replace(new RegExp(":nightmarevc:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/nightmarevc.png">');
+						msg = msg.replace(new RegExp(":snipe:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/snipe.png">');
+						msg = msg.replace(new RegExp(":gg:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/gg.png">');
+						msg = msg.replace(new RegExp(":gaben:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/gaben.png">');
+						msg = msg.replace(new RegExp(":pigeon:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/pigeon.png">');
+						msg = msg.replace(new RegExp(":babyfac3:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/babyfac3.png">');
+						msg = msg.replace(new RegExp(":ultimate:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/ultimate.png">');
+						msg = msg.replace(new RegExp(":benn:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/benn.png">');
+						msg = msg.replace(new RegExp(":andresky:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/andresky.png">');
+						msg = msg.replace(new RegExp(":tiagovski:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/tiagovski.png">');
+						msg = msg.replace(new RegExp(":miss:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/miss.png">');
+						msg = msg.replace(new RegExp(":fenom:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/fenom.png">');
+						msg = msg.replace(new RegExp(":raphakappa:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/raphakappa.png">');
+						msg = msg.replace(new RegExp(":xpgaming:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/xpgaming.png">');
+						msg = msg.replace(new RegExp(":trump:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/trump.png">');
+						msg = msg.replace(new RegExp(":wall:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/wall.png">');
+						msg = msg.replace(new RegExp(":kappa:", 'g'), '<img src="https://bubble-at4vegnhqpi2zkmsnjd.stackpathdns.com/img/emotes/kappa.png">');
 						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
 				});
