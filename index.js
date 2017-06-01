@@ -189,6 +189,8 @@ io.on('connection', function(socket){
 						return false;
 					}
 
+					msg = msg.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
 						if (error) throw error;
 						io.emit('message', { avatar: CUser.avatar, text: msg });
