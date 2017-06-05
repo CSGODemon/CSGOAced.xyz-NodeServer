@@ -5,17 +5,20 @@
 		"Password": "",
 		"Database" : "CSGOAced"
 	},
-	"Bot":{
+	"Bot": {
 		"Name": "CSGOAced.xyz Bot",
 		"Avatar": "https://www.csgoaced.xyz/img/icon.png"
 	},
-    "Coinflip":{
+    "Coinflip": {
         "Fee": 0.1
     },
-	"Price":{
+	"Price": {
 		"BuyMultiplier": 100,
 		"SellMultiplier": 107,
 		"BuyGap": -3,
 		"SellGap": 3
+	},
+	"RollBar": {
+		"Key": "Your Roll Bar Key"
 	}
 }
