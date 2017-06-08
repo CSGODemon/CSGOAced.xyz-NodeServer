@@ -170,6 +170,10 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('referal', function(refcode){
+					if(!refcode || refcode.length > 7){
+						SendAlert('Invalid Referal Code', 'Maximum Referal Code Length is 7 Characters');
+						return false;
+					}
 					connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?;` [refcode, CUser.id], function (error, results, fields) {
 						SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
 						connection.query(`INSERT INTO RefCodeHistory (UserID, RefCode) VALUES (?, ?)`, [CUser.id, refcode], function (error, results, fields) { });
