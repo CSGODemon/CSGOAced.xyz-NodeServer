@@ -94,6 +94,7 @@ io.on('connection', function(socket){
 									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice], function (error, results, fields) {});
 								}
 								SendSuccess("Success", "Skins Price Refreshed Successfully!");
+								connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (?)`, [CUser.id], function (error, results, fields) { });
 							}else{
 								SendAlert("Error", "Error Refreshing Skins Price!");
 							}
