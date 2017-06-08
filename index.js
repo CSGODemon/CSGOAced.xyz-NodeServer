@@ -68,7 +68,8 @@ io.on('connection', function(socket){
 				CUser.IsAuth = true;
 			}
 
-			if (CUser.IsAuth){
+			if (CUser.IsAuth && CUser.Role != "Banned"){
+
 				socket.emit('show place bet');
 
 				if (CUser.Role == "Admin"){
@@ -204,6 +205,8 @@ io.on('connection', function(socket){
 						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
 				});
+			}else if (CUser.Role == "Banned"){
+				SendAlert("Permanent Ban!", "You Have Been Permanently Banned from CSGOAced.xyz.");
 			}else{
 				socket.on('place bet', function(){
 					SendAlert("No Login", "Login to Place Bets");
