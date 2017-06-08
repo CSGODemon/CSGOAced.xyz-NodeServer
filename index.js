@@ -17,26 +17,6 @@ var rollbar = new Rollbar(Settings.RollBar.Key);
 
 connection.connect();
 
-var bets = [];
-
-var BetID = 0;
-
-var Bet = function(UID, avatar, ammount){
-	this.id = BetID;
-
-	BetID++;
-
-	this.UID1 = UID;
-	this.UID2;
-	this.avatar1 = avatar;
-	this.avatar2;
-	this.ammount = ammount;
-	this.winner;
-	this.winnerUID;
-	this.fee;
-	this.isFinished = false;
-}
-
 var bot = {
 	name: Settings.Bot.Name,
 	avatar: Settings.Bot.Avatar
@@ -53,24 +33,34 @@ io.on('connection', function(socket){
 
 	socket.emit('auth user');
 
-	socket.on('auth user', function(User){
-		connection.query(`SELECT Steam64, Role FROM Users WHERE ID = ? AND PrivateKey = ? AND PrivateKey IS NOT NULL`, [User.id, User.PrivateKey], function (error, results, fields) {
+	connection.query(`SELECT DISTINCT CoinflipHistory.ID AS ID, Users.Avatar AS Avatar, CoinflipHistory.Ammount AS Ammount FROM CoinflipHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 0 AND CoinflipHistory.UserID1 = Users.ID ORDER BY CoinflipHistory.Ammount DESC`, function (error, results, fields) {
+		for (var row in results) {
+			socket.emit('display bet', {
+				id: results[row].ID,
+				avatar1: results[row].Avatar,
+				ammount: results[row].Ammount,
+				isFinished: false
+			});
+		}
+	});
 
+	socket.on('auth user', function(User){
+		connection.query(`SELECT Steam64, Name, Avatar, Role FROM Users WHERE ID = ? AND PrivateKey = ? AND PrivateKey IS NOT NULL`, [User.id, User.PrivateKey], function (error, results, fields) {
 			var CUser = { IsAuth: false}
 
 			for (var row in results) {
 				CUser.id = User.id;
 				CUser.Steam64 = results[row].Steam64;
+				CUser.name = results[row].Name;
+				CUser.avatar = results[row].Avatar;
 				CUser.Role = results[row].Role;
 				CUser.PrivateKey = User.PrivateKey;
-				CUser.name = User.name;
-				CUser.avatar = User.avatar;
 				CUser.IsAuth = true;
 			}
 
 			if (CUser.IsAuth && CUser.Role != "Banned"){
 
-				socket.emit('show place bet');
+				socket.emit('show place bet', CUser.avatar);
 
 				if (CUser.Role == "Admin"){
 					socket.on('refresh prices', function(){
@@ -120,46 +110,63 @@ io.on('connection', function(socket){
 						return false;
 					}
 
-					var bet = new Bet(CUser.id, CUser.avatar, ammount);
-					bets.push(bet);
-					io.emit('display bet', bet);
+					connection.query(`INSERT INTO CoinflipHistory (UserID1, Ammount) VALUES (?, ?);`, [CUser.id, ammount], function (error, results, fields) {
+						connection.query(`SELECT MAX(ID) AS ID FROM CoinflipHistory`, function (error, results, fields) {
+
+							BetID = -1;
+							for (var row in results) {
+								BetID = results[row].ID;
+							}
+							
+							io.emit('display bet', {
+								id: BetID,
+								avatar1: CUser.avatar,
+								ammount: ammount,
+								isFinished: false
+							});
+						});
+					});
 				});
 
 				socket.on('join bet', function(BetID){
-					for (var i in bets){
-						var bet = bets[i];
-						if (!bet.isFinished){
-							if (bet.id == BetID){
-								if (bet.UID1 != CUser.id){
-									bet.avatar2 = CUser.avatar;
-									bet.UID2 = CUser.id;
+					connection.query(`SELECT CoinflipHistory.ID AS ID, CoinflipHistory.UserID1 AS UID1, CoinflipHistory.Ammount AS Ammount, CoinflipHistory.Fee AS Fee, Users.Avatar AS Avatar FROM CoinflipHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 0 AND CoinflipHistory.UserID1 = Users.ID AND CoinflipHistory.ID = ?`, [BetID], function (error, results, fields) {
+						for (var row in results) {
+							if (results[row].ID == BetID){
+								if (results[row].UID1 != CUser.id){
 
-									bet.ammount *= 2;
-									bet.fee = parseInt(bet.ammount * Settings.Coinflip.Fee);
-									bet.ammount -= bet.fee;
+									Ammount = results[row].Ammount * 2;
+									Fee = parseInt(Ammount * Settings.Coinflip.Fee);
+									Ammount -= Fee;
 
-									bet.winner = Math.floor(Math.random()*2);
+									Winner = Math.floor(Math.random()*2);
 
-									bet.winnerUID = (bet.winner == 1) ? bet.UID1 : bet.UID2;
+									WinnerUID = (Winner == 1) ? results[row].UID1 : CUser.id;
+									Avatar = results[row].Avatar;
 
-									bet.isFinished =  true;
-
-									connection.query(`INSERT INTO CoinflipHistory (UserID, Ammount, Fee) VALUES (?, ?, ?);`, [bet.winnerUID, bet.ammount, bet.fee], function (error, results, fields) {
-										io.emit('flip', bet);
+									connection.query(`UPDATE CoinflipHistory SET UserID2 = ?, Ammount = ?, Fee = ?, IsFinished = 1 WHERE ID = ?;`, [CUser.id, Ammount, Fee, BetID], function (error, results, fields) {
+										connection.query(`INSERT INTO CoinflipResultHistory (CoinflipID, WinnerID) VALUES (?, ?);`, [BetID, WinnerUID], function (error, results, fields) {
+											io.emit('flip', {
+												id: BetID,
+												avatar1: Avatar,
+												avatar2: CUser.avatar,
+												ammount: Ammount,
+												winner: Winner,
+												winnerUID: WinnerUID,
+												isFinished: true
+											});
+										});
 									});
-
-									bets.splice(i, 1);
 								}else{
 									SendAlert("Bet Error", "<span class='glyphicon glyphicon-remove'></span> Can't place a bet against yourself");
 								}
 								return false;
 							}
 						}
-					}
+					});
 				});
 
 				socket.on('coinflip history', function(){
-					connection.query(`SELECT ID, Ammount, CreateTimestamp FROM CoinflipHistory WHERE UserID = ?`,[User.id] , function (error, results, fields) {
+					connection.query(`SELECT CoinflipResultHistory.CoinflipID AS ID, CoinflipHistory.Ammount AS Ammount, CoinflipResultHistory.CreateTimestamp AS CreateTimestamp FROM CoinflipResultHistory INNER JOIN CoinflipHistory WHERE CoinflipResultHistory.WinnerID = ? AND CoinflipResultHistory.CoinflipID = CoinflipHistory.ID ORDER BY CoinflipHistory.ID DESC`, [User.id] , function (error, results, fields) {
 						socket.emit('coinflip history', results);
 					});
 				});
@@ -220,13 +227,6 @@ io.on('connection', function(socket){
 					SendAlert("No Login", "Login to Send Messages!");
 				});
 			}
-
-			//Display Active Bets
-			bets.forEach(function(bet){
-				if (!bet.isFinished){
-					socket.emit('display bet', bet);
-				}
-			});
 		});
 	});
 
