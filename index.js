@@ -171,7 +171,6 @@ io.on('connection', function(socket){
 
 				socket.on('referal', function(refcode){
 					connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?;` [refcode, CUser.id], function (error, results, fields) {
-						if (error) throw error;
 						SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
 					});
 				});
@@ -183,7 +182,6 @@ io.on('connection', function(socket){
 					}
 
 					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
-						if (error) throw error;
 						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
 					});
 				});
@@ -197,7 +195,6 @@ io.on('connection', function(socket){
 					msg = msg.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 					connection.query(`INSERT INTO ChatHistory (UserID, Message) VALUES (?, ?)`, [CUser.id, msg], function (error, results, fields) {
-						if (error) throw error;
 						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
 				});
