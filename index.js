@@ -181,8 +181,8 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('trade_url', function(trade_url){
-					if(!trade_url || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-						$.alert('Provide a valid Trade URL');
+					if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
+						SendAlert('Invalid Trade URL', 'Provide a valid Trade URL');
 						return false;
 					}
 
