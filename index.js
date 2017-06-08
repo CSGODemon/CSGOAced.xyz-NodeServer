@@ -17,6 +17,8 @@ var rollbar = new Rollbar(Settings.RollBar.Key);
 
 connection.connect();
 
+connection.query(`INSERT INTO NodeStartupHistory (ID, StartTimeStamp) VALUES (DEFAULT, DEFAULT)`, function (error, results, fields) { });
+
 var bot = {
 	name: Settings.Bot.Name,
 	avatar: Settings.Bot.Avatar
