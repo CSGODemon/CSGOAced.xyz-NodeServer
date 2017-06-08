@@ -184,6 +184,7 @@ io.on('connection', function(socket){
 
 					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
 						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
+						connection.query(`INSERT INTO TradeURLHistory (UserID, Trade_URL) VALUES (?, ?)`, [CUser.id, trade_url], function (error, results, fields) { });
 					});
 				});
 
