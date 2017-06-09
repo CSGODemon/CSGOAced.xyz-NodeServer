@@ -293,6 +293,8 @@ io.on('connection', function(socket){
 			backgroundDismiss: true,
 			title: Title,
 			content: Content,
+			animation: 'RotateXR',
+			closeAnimation: 'RotateXR',
 			buttons: {
 				ok: {
 					btnClass: 'btn-red',
@@ -311,6 +313,8 @@ io.on('connection', function(socket){
 			backgroundDismiss: true,
 			title: Title,
 			content: Content,
+			animation: 'RotateXR',
+			closeAnimation: 'RotateXR',
 			buttons: {
 				ok: {
 					btnClass: 'btn-green',
