@@ -103,7 +103,6 @@ io.on('connection', function(socket){
 						if (!isNaN(Coins)){
 							socket.emit('update coins', Coins);
 						}
-						
 					});
 				});
 
@@ -124,19 +123,32 @@ io.on('connection', function(socket){
 						return false;
 					}
 
-					connection.query(`INSERT INTO CoinflipHistory (UserID1, Ammount) VALUES (?, ?);`, [CUser.id, ammount], function (error, results, fields) {
-						connection.query(`SELECT MAX(ID) AS ID FROM CoinflipHistory`, function (error, results, fields) {
+					connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
+						for (var row in results) {
+							Coins = results[row].Coins;
+						}
+						if (isNaN(Coins) || Coins < ammount){
+							SendAlert("Not Enought Coins!", "Deposit to get more coins!");
+							return false;
+						}
+						Wallet = (Coins - ammount);
+						connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [Wallet, CUser.id], function (error, results, fields) {
+							socket.emit('update coins', Wallet);
+							connection.query(`INSERT INTO CoinflipHistory (UserID1, Ammount) VALUES (?, ?);`, [CUser.id, ammount], function (error, results, fields) {
+								connection.query(`SELECT MAX(ID) AS ID FROM CoinflipHistory`, function (error, results, fields) {
 
-							BetID = -1;
-							for (var row in results) {
-								BetID = results[row].ID;
-							}
-							
-							io.emit('display bet', {
-								id: BetID,
-								avatar1: CUser.avatar,
-								ammount: ammount,
-								isFinished: false
+									BetID = -1;
+									for (var row in results) {
+										BetID = results[row].ID;
+									}
+									
+									io.emit('display bet', {
+										id: BetID,
+										avatar1: CUser.avatar,
+										ammount: ammount,
+										isFinished: false
+									});
+								});
 							});
 						});
 					});
@@ -148,6 +160,7 @@ io.on('connection', function(socket){
 							if (results[row].ID == BetID){
 								if (results[row].UID1 != CUser.id){
 
+									BetAmmount = results[row].Ammount;
 									Ammount = results[row].Ammount * 2;
 									Fee = parseInt(Ammount * Settings.Coinflip.Fee);
 									Ammount -= Fee;
@@ -157,16 +170,37 @@ io.on('connection', function(socket){
 									WinnerUID = (Winner == 1) ? results[row].UID1 : CUser.id;
 									Avatar = results[row].Avatar;
 
-									connection.query(`UPDATE CoinflipHistory SET UserID2 = ?, Ammount = ?, Fee = ?, IsFinished = 1 WHERE ID = ?;`, [CUser.id, Ammount, Fee, BetID], function (error, results, fields) {
-										connection.query(`INSERT INTO CoinflipResultHistory (CoinflipID, WinnerID) VALUES (?, ?);`, [BetID, WinnerUID], function (error, results, fields) {
-											io.emit('flip', {
-												id: BetID,
-												avatar1: Avatar,
-												avatar2: CUser.avatar,
-												ammount: Ammount,
-												winner: Winner,
-												winnerUID: WinnerUID,
-												isFinished: true
+									connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
+										for (var row in results) {
+											Coins = results[row].Coins;
+										}
+										if (isNaN(Coins) || Coins < BetAmmount){
+											SendAlert("Not Enought Coins!", "Deposit to get more coins!");
+											return false;
+										}
+
+										Wallet = (Coins - BetAmmount);
+										socket.emit('update coins', Wallet);
+										connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [Wallet, CUser.id], function (error, results, fields) {
+											connection.query(`UPDATE CoinflipHistory SET UserID2 = ?, Ammount = ?, Fee = ?, IsFinished = 1 WHERE ID = ?;`, [CUser.id, Ammount, Fee, BetID], function (error, results, fields) {
+												connection.query(`INSERT INTO CoinflipResultHistory (CoinflipID, WinnerID) VALUES (?, ?);`, [BetID, WinnerUID], function (error, results, fields) {
+													connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
+														for (var row in results) {
+															WinnerCoins = results[row].Coins;
+														}
+														connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(WinnerCoins + Ammount), WinnerUID], function (error, results, fields) {
+															io.emit('flip', {
+																id: BetID,
+																avatar1: Avatar,
+																avatar2: CUser.avatar,
+																ammount: Ammount,
+																winner: Winner,
+																winnerUID: WinnerUID,
+																isFinished: true
+															});
+														});
+													});
+												});
 											});
 										});
 									});
