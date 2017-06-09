@@ -11,10 +11,6 @@ var connection = mysql.createConnection({
 	database : Settings.Database.Database
 });
 
-// include and initialize the rollbar library with your access token
-var Rollbar = require("rollbar");
-var rollbar = new Rollbar(Settings.RollBar.Key);
-
 connection.connect();
 
 connection.query(`INSERT INTO NodeStartupHistory (ID, StartTimeStamp) VALUES (DEFAULT, DEFAULT)`, function (error, results, fields) { });

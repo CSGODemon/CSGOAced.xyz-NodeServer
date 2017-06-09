@@ -17,8 +17,5 @@
 		"SellMultiplier": 107,
 		"BuyGap": -3,
 		"SellGap": 3
-	},
-	"RollBar": {
-		"Key": "Your Roll Bar Key"
 	}
 }
