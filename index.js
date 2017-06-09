@@ -95,6 +95,18 @@ io.on('connection', function(socket){
 					});
 				}
 
+				socket.on('reload coins', function(coins){
+					connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
+						for (var row in results) {
+							Coins = results[row].Coins;
+						}
+						if (!isNaN(Coins)){
+							socket.emit('update coins', Coins);
+						}
+						
+					});
+				});
+
 				socket.on('place bet', function(ammount){
 
 					if (isNaN(ammount)){
