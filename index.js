@@ -433,5 +433,7 @@ manager.on('newOffer', (offer) => {
 				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Accepted Offer From Admin: " + offer.id], function (error, results, fields) { });
 			}
 		});
+	}else{
+		offer.decline();
 	}
 });
