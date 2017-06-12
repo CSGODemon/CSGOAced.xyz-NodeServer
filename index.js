@@ -359,18 +359,16 @@ client.on('webSession', (sessionid, cookies) => {
 	community.startConfirmationChecker(10000, Settings.Bot.identitySecret);
 
 
-	sendOffer(7,
-	[{
-		assetid:"10595875988",
-		classid:"1690096482",
-	}],
-	[{
-		assetid:"10596012282",
-		classid:"1989314653",
-	}], "123");
+	sendOffer(7, [{ 
+		assetid:"10596380849",
+		classid:"1989314653"
+	},{
+		assetid:"10596380813",
+		classid:"310776784"
+	}], false, "123");
 });
 
-function sendOffer(UID, toRecieve, toSend, code) {
+function sendOffer(UID, items, isDeposit, code) {
 	connection.query(`SELECT Trade_URL, Steam64 FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
 		for (var row in results) {
 			steam64 = results[row].Steam64;
@@ -382,44 +380,41 @@ function sendOffer(UID, toRecieve, toSend, code) {
 
 		const offer = manager.createOffer(Trade_URL);
 
-		manager.loadUserInventory(partner, appid, contextid, true, (err, theirInv) => {
-			if (err) {
-				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
-			} else {
-				for (var itemToReceive in toRecieve){
-					for (var theirItem in theirInv){
-						if (theirInv[theirItem].classid == toRecieve[itemToReceive].classid && theirInv[theirItem].assetid == toRecieve[itemToReceive].assetid){
-							offer.addTheirItem(theirInv[theirItem]);
+		offer.setMessage(`Where's your security code: ${code}`);
+
+		if (isDeposit == true){
+			manager.loadUserInventory(partner, appid, contextid, true, (err, theirInv) => {
+				if (err) {
+					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+				} else {
+					for (var item in items){
+						for (var theirItem in theirInv){
+							if (theirInv[theirItem].classid == items[item].classid && theirInv[theirItem].assetid == items[item].assetid){
+								offer.addTheirItem(theirInv[theirItem]);
+							}
 						}
 					}
+					SendTradeOffer(offer);
 				}
-				
-				manager.loadInventory(appid, contextid, true, (err, myInv) => {
-					if (err) {
-						connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
-					} else {
-						for (var itemToSend in toSend){
-							for (var myItem in myInv){
-								if (myInv[myItem].classid == toSend[itemToSend].classid && myInv[myItem].assetid == toSend[itemToSend].assetid){
-									offer.addMyItem(myInv[myItem]);
-								}
+			});
+		}
+		else
+		{
+			manager.loadInventory(appid, contextid, true, (err, myInv) => {
+				if (err) {
+					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+				} else {
+					for (var item in items){
+						for (var myItem in myInv){
+							if (myInv[myItem].classid == items[item].classid && myInv[myItem].assetid == items[item].assetid){
+								offer.addMyItem(myInv[myItem]);
 							}
 						}
-
-						offer.setMessage(`Where's your security code: ${code}?`);
-
-						offer.send((err, status) => {
-							if (err) {
-								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
-							} else {
-								community.checkConfirmations();
-								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Sent offer. ID = " + offer.id], function (error, results, fields) { });
-							}
-						});
 					}
-				});
-			}
-		});
+					SendTradeOffer(offer);
+				}
+			});
+		}
 	});
 }
 
@@ -437,3 +432,14 @@ manager.on('newOffer', (offer) => {
 		offer.decline();
 	}
 });
+
+function SendTradeOffer(offer){
+	offer.send((err, status) => {
+		if (err) {
+			connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+		} else {
+			community.checkConfirmations();
+			connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Sent offer. ID = " + offer.id], function (error, results, fields) { });
+		}
+	});	
+}
