@@ -17,5 +17,11 @@
 		"SellMultiplier": 107,
 		"BuyGap": -3,
 		"SellGap": 3
+	},
+	"Bot":{
+		"accountName": "steam_name",
+		"password": "steam_password",
+		"sharedSecret": "steam_shared_secret",
+		"admin": "steam_admin_id64"
 	}
 }

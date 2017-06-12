@@ -1,3 +1,8 @@
+const SteamUser = require('steam-user');
+const SteamTotp = require('steam-totp');
+const SteamCommunity = require('steamcommunity');
+const TradeOfferManager = require('steam-tradeoffer-manager');
+
 const Settings = require('./config.json');
 var request = require("request");
 
@@ -13,7 +18,7 @@ var connection = mysql.createConnection({
 
 connection.connect();
 
-connection.query(`INSERT INTO NodeStartupHistory (ID, StartTimeStamp) VALUES (DEFAULT, DEFAULT)`, function (error, results, fields) { });
+connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Server", "Start")`, function (error, results, fields) { });
 
 var bot = {
 	name: Settings.Bot.Name,
@@ -21,6 +26,22 @@ var bot = {
 }
 
 UsersOnline = 0;
+
+const client = new SteamUser();
+const community = new SteamCommunity();
+const manager = new TradeOfferManager({
+	steam: client,
+	community: community,
+	language: 'en'
+});
+
+const logOnOptions = {
+	accountName: Settings.Bot.accountName,
+	password: Settings.Bot.password,
+	twoFactorCode: SteamTotp.generateAuthCode(Settings.Bot.sharedSecret)
+}
+
+client.logOn(logOnOptions);
 
 io.on('connection', function(socket){
 
@@ -325,4 +346,17 @@ io.on('connection', function(socket){
 			}
 		});
 	}
+});
+
+client.on('loggedOn', () => {
+	connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", "Login")`, function (error, results, fields) { });
+
+    client.setPersona(SteamUser.Steam.EPersonaState.Online, "CSGOAced.xyz Bot");
+});
+
+client.on('webSession', (sessionid, cookies) => {
+	manager.setCookies(cookies);
+
+	community.setCookies(cookies);
+	community.startConfirmationChecker(10000, Settings.Bot.sharedSecret);
 });
