@@ -288,7 +288,7 @@ io.on('connection', function(socket){
 						}
 
 						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-							SendAlert('No Trade Url', 'Add Your Trade Url|');
+							SendAlert('No Trade Url', 'Add Your Trade Url!');
 							return false;
 						}
 
