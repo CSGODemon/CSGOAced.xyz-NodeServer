@@ -7,7 +7,12 @@
 	},
 	"Bot": {
 		"Name": "CSGOAced.xyz Bot",
-		"Avatar": "https://www.csgoaced.xyz/img/icon.png"
+		"Avatar": "https://www.csgoaced.xyz/img/icon.png",
+		"accountName": "steam_name",
+		"password": "steam_password",
+		"sharedSecret": "steam_shared_secret",
+		"identitySecret": "steam_identitySecret",
+		"admin": "steam_admin_id64"
 	},
     "Coinflip": {
         "Fee": 0.1
@@ -17,11 +22,5 @@
 		"SellMultiplier": 107,
 		"BuyGap": -3,
 		"SellGap": 3
-	},
-	"Bot":{
-		"accountName": "steam_name",
-		"password": "steam_password",
-		"sharedSecret": "steam_shared_secret",
-		"admin": "steam_admin_id64"
 	}
 }

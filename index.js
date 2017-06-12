@@ -350,13 +350,88 @@ io.on('connection', function(socket){
 
 client.on('loggedOn', () => {
 	connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", "Login")`, function (error, results, fields) { });
-
-    client.setPersona(SteamUser.Steam.EPersonaState.Online, "CSGOAced.xyz Bot");
 });
 
 client.on('webSession', (sessionid, cookies) => {
 	manager.setCookies(cookies);
 
 	community.setCookies(cookies);
-	community.startConfirmationChecker(10000, Settings.Bot.sharedSecret);
+	community.startConfirmationChecker(10000, Settings.Bot.identitySecret);
+
+
+	sendOffer(7,
+	[{
+		assetid:"10595875988",
+		classid:"1690096482",
+	}],
+	[{
+		assetid:"10596012282",
+		classid:"1989314653",
+	}], "123");
+});
+
+function sendOffer(UID, toRecieve, toSend, code) {
+	connection.query(`SELECT Trade_URL, Steam64 FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
+		for (var row in results) {
+			steam64 = results[row].Steam64;
+			Trade_URL = results[row].Trade_URL;
+		}
+		const partner = steam64;
+		const appid = 730;
+		const contextid = 2;
+
+		const offer = manager.createOffer(Trade_URL);
+
+		manager.loadUserInventory(partner, appid, contextid, true, (err, theirInv) => {
+			if (err) {
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+			} else {
+				for (var itemToReceive in toRecieve){
+					for (var theirItem in theirInv){
+						if (theirInv[theirItem].classid == toRecieve[itemToReceive].classid && theirInv[theirItem].assetid == toRecieve[itemToReceive].assetid){
+							offer.addTheirItem(theirInv[theirItem]);
+						}
+					}
+				}
+				
+				manager.loadInventory(appid, contextid, true, (err, myInv) => {
+					if (err) {
+						connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+					} else {
+						for (var itemToSend in toSend){
+							for (var myItem in myInv){
+								if (myInv[myItem].classid == toSend[itemToSend].classid && myInv[myItem].assetid == toSend[itemToSend].assetid){
+									offer.addMyItem(myInv[myItem]);
+								}
+							}
+						}
+
+						offer.setMessage(`Where's your security code: ${code}?`);
+
+						offer.send((err, status) => {
+							if (err) {
+								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+							} else {
+								community.checkConfirmations();
+								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Sent offer. ID = " + offer.id], function (error, results, fields) { });
+							}
+						});
+					}
+				});
+			}
+		});
+	});
+}
+
+manager.on('newOffer', (offer) => {
+	if (offer.partner.getSteamID64() == Settings.Bot.admin) {
+		offer.accept((err, status) => {
+			if (err) {
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Accepting Offer From Admin: " + err], function (error, results, fields) { });
+			} else {
+				community.checkConfirmations();
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Accepted Offer From Admin: " + offer.id], function (error, results, fields) { });
+			}
+		});
+	}
 });
