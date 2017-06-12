@@ -280,6 +280,12 @@ io.on('connection', function(socket){
 						io.emit('message', { avatar: CUser.avatar, text: msg });
 					});
 				});
+
+				socket.on('deposit', function(items){	
+					const code = Math.floor(Math.random()*10000);
+					SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
+					sendOffer(CUser.id, items, true, code);
+				});
 			}else if (CUser.Role == "Banned"){
 				SendAlert("Permanent Ban!", "You Have Been Permanently Banned from CSGOAced.xyz.");
 			}else{
@@ -357,15 +363,6 @@ client.on('webSession', (sessionid, cookies) => {
 
 	community.setCookies(cookies);
 	community.startConfirmationChecker(10000, Settings.Bot.identitySecret);
-
-
-	sendOffer(7, [{ 
-		assetid:"10596380849",
-		classid:"1989314653"
-	},{
-		assetid:"10596380813",
-		classid:"310776784"
-	}], false, "123");
 });
 
 function sendOffer(UID, items, isDeposit, code) {
@@ -394,7 +391,7 @@ function sendOffer(UID, items, isDeposit, code) {
 							}
 						}
 					}
-					SendTradeOffer(offer);
+					SendTradeOffer(offer, UID, "Deposit", items);
 				}
 			});
 		}
@@ -411,7 +408,7 @@ function sendOffer(UID, items, isDeposit, code) {
 							}
 						}
 					}
-					SendTradeOffer(offer);
+					SendTradeOffer(offer, UID, "Withraw", items);
 				}
 			});
 		}
@@ -424,7 +421,6 @@ manager.on('newOffer', (offer) => {
 			if (err) {
 				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Accepting Offer From Admin: " + err], function (error, results, fields) { });
 			} else {
-				community.checkConfirmations();
 				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Accepted Offer From Admin: " + offer.id], function (error, results, fields) { });
 			}
 		});
@@ -433,13 +429,15 @@ manager.on('newOffer', (offer) => {
 	}
 });
 
-function SendTradeOffer(offer){
+manager.on('sentOfferChanged', (offer, oldState) => {
+	connection.query(`UPDATE Transactions SET Status = ? WHERE OfferID = ?`, [offer.state, offer.id], function (error, results, fields) { });
+});
+
+function SendTradeOffer(offer, UID, TransactionType, items){
 	offer.send((err, status) => {
 		if (err) {
 			connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
-		} else {
-			community.checkConfirmations();
-			connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Sent offer. ID = " + offer.id], function (error, results, fields) { });
 		}
+		connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) { });
 	});	
 }
