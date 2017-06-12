@@ -281,10 +281,21 @@ io.on('connection', function(socket){
 					});
 				});
 
-				socket.on('deposit', function(items){	
-					const code = Math.floor(Math.random()*10000);
-					SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
-					sendOffer(CUser.id, items, true, code);
+				socket.on('deposit', function(items){
+					connection.query(`SELECT Trade_URL FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
+						for (var row in results) {
+							trade_url = Trade_URL;
+						}
+
+						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
+							SendAlert('No Trade Url', 'Add Your Trade Url|');
+							return false;
+						}
+
+						const code = Math.floor(Math.random()*10000);
+						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
+						sendOffer(CUser.id, items, true, code);
+					});
 				});
 			}else if (CUser.Role == "Banned"){
 				SendAlert("Permanent Ban!", "You Have Been Permanently Banned from CSGOAced.xyz.");
