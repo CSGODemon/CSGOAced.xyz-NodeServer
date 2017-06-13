@@ -282,13 +282,18 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('deposit', function(items){
+					if (items.length == 0){
+						SendAlert('No selected items', 'Add items to your cart!');
+						return false;
+					}
+
 					connection.query(`SELECT Trade_URL FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
 						for (var row in results) {
 							trade_url = results[row].Trade_URL;
 						}
 
 						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-							SendAlert('No Trade Url', 'Add Your Trade Url!');
+							socket.emit('tradeurl');
 							return false;
 						}
 
