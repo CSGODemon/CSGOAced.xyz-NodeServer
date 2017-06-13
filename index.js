@@ -387,6 +387,9 @@ function sendOffer(UID, items, isDeposit, code) {
 			steam64 = results[row].Steam64;
 			Trade_URL = results[row].Trade_URL;
 		}
+
+		if(!Trade_URL || Trade_URL.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(Trade_URL))){ return false; }
+
 		const partner = steam64;
 		const appid = 730;
 		const contextid = 2;
@@ -400,13 +403,21 @@ function sendOffer(UID, items, isDeposit, code) {
 				if (err) {
 					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
 				} else {
+					if (theirInv.length == 0){ return false; }
+
+					var i = 0;
+
 					for (var item in items){
 						for (var theirItem in theirInv){
 							if (theirInv[theirItem].classid == items[item].classid && theirInv[theirItem].assetid == items[item].assetid){
 								offer.addTheirItem(theirInv[theirItem]);
+								i++;
 							}
 						}
 					}
+
+					if (i != items.length){ return false; }
+
 					SendTradeOffer(offer, UID, "Deposit", items);
 				}
 			});
@@ -417,13 +428,21 @@ function sendOffer(UID, items, isDeposit, code) {
 				if (err) {
 					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
 				} else {
+					if (myInv.length == 0){ return false; }
+
+					var i = 0;
+
 					for (var item in items){
 						for (var myItem in myInv){
 							if (myInv[myItem].classid == items[item].classid && myInv[myItem].assetid == items[item].assetid){
 								offer.addMyItem(myInv[myItem]);
+								i++;
 							}
 						}
 					}
+
+					if (i != items.length){ return false; }
+
 					SendTradeOffer(offer, UID, "Withraw", items);
 				}
 			});
