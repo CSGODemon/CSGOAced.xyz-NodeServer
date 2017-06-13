@@ -250,9 +250,16 @@ io.on('connection', function(socket){
 					
 					refcode = refcode.toLowerCase();
 
-					connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?`, [refcode, CUser.id], function (error, results, fields) {
-						SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
-						connection.query(`INSERT INTO RefCodeHistory (UserID, RefCode) VALUES (?, ?)`, [CUser.id, refcode], function (error, results, fields) { });
+					connection.query(`SELECT count(*) AS Repeated FROM Users WHERE RefCode = ? AND ID <> ?`, [refcode, CUser.id], function (error, results, fields) {
+						if (results[0].Repeated == 0){
+							connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?`, [refcode, CUser.id], function (error, results, fields) {
+								connection.query(`INSERT INTO RefCodeHistory (UserID, RefCode) VALUES (?, ?)`, [CUser.id, refcode], function (error, results, fields) {
+									SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
+								});
+							});
+						}else{
+							SendAlert("Duplicate Code", "This Referal Code is Already in Use");
+						}
 					});
 				});
 
