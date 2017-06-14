@@ -416,7 +416,7 @@ function sendOffer(UID, items, isDeposit, code) {
 
 					for (var item in items){
 						for (var theirItem in theirInv){
-							if (theirInv[theirItem].classid == items[item].classid && theirInv[theirItem].assetid == items[item].assetid){
+							if (theirInv[theirItem].classid == items[item].classID && theirInv[theirItem].assetid == items[item].assetID){
 								offer.addTheirItem(theirInv[theirItem]);
 								i++;
 							}
@@ -453,7 +453,7 @@ function sendOffer(UID, items, isDeposit, code) {
 
 									for (var item in items){
 										for (var myItem in myInv){
-											if (myInv[myItem].classid == items[item].classid && myInv[myItem].assetid == items[item].assetid){
+											if (myInv[myItem].classid == items[item].classID && myInv[myItem].assetid == items[item].assetID){
 												offer.addMyItem(myInv[myItem]);
 												i++;
 											}
