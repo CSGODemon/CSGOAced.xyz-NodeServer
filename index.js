@@ -504,6 +504,14 @@ function SendTradeOffer(offer, UID, TransactionType, items){
 		if (err) {
 			connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
 		}
-		connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) {});
+		connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) {
+			for (var item in items){
+				if (TransactionType == "Deposit"){
+					connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT BuyPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name], function (error, results, fields) {});
+				}else{
+					connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name], function (error, results, fields) {});
+				}
+			}
+		});
 	});	
 }
