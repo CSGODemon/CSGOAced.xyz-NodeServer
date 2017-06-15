@@ -18,7 +18,7 @@ var connection = mysql.createConnection({
 
 connection.connect();
 
-connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Server", "Start")`, function (error, results, fields) { });
+connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Server", "Start")`);
 
 var bot = {
 	name: Settings.Bot.Name,
@@ -89,22 +89,21 @@ io.on('connection', function(socket){
 						}, function (error, response, body) {
 							if (!error && response.statusCode === 200) {
 
-								connection.query(`TRUNCATE TABLE SkinPrices;`, function (error, results, fields) {});
+								connection.query(`TRUNCATE TABLE SkinPrices;`);
 
 								for (var skin in body){
 									connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName = ?)
 														THEN
 															INSERT INTO Skins (MarketName) VALUES (?);
-														END IF;`,[skin, skin], function (error, results, fields) {
-									});
+														END IF;`,[skin, skin]);
 
 									var BuyPrice = body[skin] * Settings.Price.BuyMultiplier + Settings.Price.BuyGap;
 									var SellPrice = body[skin] * Settings.Price.SellMultiplier + Settings.Price.SellGap;
 
-									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice], function (error, results, fields) {});
+									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice]);
 								}
 								SendSuccess("Success", "Skins Price Refreshed Successfully!");
-								connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (?)`, [CUser.id], function (error, results, fields) { });
+								connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (?)`, [CUser.id]);
 							}else{
 								SendAlert("Error", "Error Refreshing Skins Price!");
 							}
@@ -271,7 +270,7 @@ io.on('connection', function(socket){
 
 					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
 						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
-						connection.query(`INSERT INTO TradeURLHistory (UserID, Trade_URL) VALUES (?, ?)`, [CUser.id, trade_url], function (error, results, fields) { });
+						connection.query(`INSERT INTO TradeURLHistory (UserID, Trade_URL) VALUES (?, ?)`, [CUser.id, trade_url]);
 					});
 				});
 
@@ -307,6 +306,28 @@ io.on('connection', function(socket){
 						const code = Math.floor(Math.random()*10000);
 						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
 						sendOffer(CUser.id, items, true, code);
+					});
+				});
+
+				socket.on('withraw', function(items){
+					if (items.length == 0){
+						SendAlert('No selected items', 'Add items to your cart!');
+						return false;
+					}
+					
+					connection.query(`SELECT Trade_URL FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
+						for (var row in results) {
+							trade_url = results[row].Trade_URL;
+						}
+
+						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
+							socket.emit('tradeurl');
+							return false;
+						}
+
+						const code = Math.floor(Math.random()*10000);
+						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
+						sendOffer(CUser.id, items, false, code);
 					});
 				});
 			}else if (CUser.Role == "Banned"){
@@ -378,7 +399,7 @@ io.on('connection', function(socket){
 });
 
 client.on('loggedOn', () => {
-	connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", "Login")`, function (error, results, fields) { });
+	connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", "Login")`);
 });
 
 client.on('webSession', (sessionid, cookies) => {
@@ -389,11 +410,10 @@ client.on('webSession', (sessionid, cookies) => {
 });
 
 function sendOffer(UID, items, isDeposit, code) {
-	connection.query(`SELECT Trade_URL, Steam64 FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
-		for (var row in results) {
-			steam64 = results[row].Steam64;
-			Trade_URL = results[row].Trade_URL;
-		}
+	connection.query(`SELECT Trade_URL, Steam64, Coins FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
+		Wallet = results[0].Coins;
+		steam64 = results[0].Steam64;
+		Trade_URL = results[0].Trade_URL;
 
 		if(!Trade_URL || Trade_URL.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(Trade_URL))){ return false; }
 
@@ -408,7 +428,7 @@ function sendOffer(UID, items, isDeposit, code) {
 		if (isDeposit == true){
 			manager.loadUserInventory(partner, appid, contextid, true, (err, theirInv) => {
 				if (err) {
-					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err]);
 				} else {
 					if (theirInv.length == 0){ return false; }
 
@@ -431,46 +451,43 @@ function sendOffer(UID, items, isDeposit, code) {
 		}
 		else
 		{
-			connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
-				var Wallet = results[0].coins;
-				var Total = 0;
+			var Total = 0;
 
-				i2 = 0;
-				for (i = 0; i < items.length; i++){
-					connection.query(`SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?`, [items[item].market_name], function (error, results, fields) {
-						i2++;
-						Total+= results[0].SellPrice;
-						if (i2 == items.length){
-							if (Total > Wallet){ return; }
+			i2 = 0;
+			for (i = 0; i < items.length; i++){
+				connection.query(`SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?`, [items[i].market_name], function (error, results, fields) {
+					i2++;
+					Total+= results[0].SellPrice;
+					if (i2 == items.length){
+						if (Total > Wallet){ return; }
 
-							manager.loadInventory(appid, contextid, true, (err, myInv) => {
-								if (err) {
-									connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
-								} else {
-									if (myInv.length == 0){ return false; }
+						manager.loadInventory(appid, contextid, true, (err, myInv) => {
+							if (err) {
+								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+							} else {
+								if (myInv.length == 0){ return false; }
 
-									var i = 0;
+								var i = 0;
 
-									for (var item in items){
-										for (var myItem in myInv){
-											if (myInv[myItem].classid == items[item].classID && myInv[myItem].assetid == items[item].assetID){
-												offer.addMyItem(myInv[myItem]);
-												i++;
-											}
+								for (var item in items){
+									for (var myItem in myInv){
+										if (myInv[myItem].classid == items[item].classID && myInv[myItem].assetid == items[item].assetID){
+											offer.addMyItem(myInv[myItem]);
+											i++;
 										}
 									}
-
-									if (i != items.length){ return false; }
-
-									connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(Wallet-Total), UID]);
-
-									SendTradeOffer(offer, UID, "Withraw", items);
 								}
-							});
-						}
-					});
-				}
-			});
+
+								if (i != items.length){ return false; }
+
+								connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(Wallet-Total), UID]);
+
+								SendTradeOffer(offer, UID, "Withraw", items);
+							}
+						});
+					}
+				});
+			}
 		}
 	});
 }
@@ -479,9 +496,9 @@ manager.on('newOffer', (offer) => {
 	if (offer.partner.getSteamID64() == Settings.Bot.admin) {
 		offer.accept((err, status) => {
 			if (err) {
-				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Accepting Offer (" + offer.id + ") From Admin: " + err], function (error, results, fields) { });
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Accepting Offer (" + offer.id + ") From Admin: " + err]);
 			} else {
-				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Accepted Offer From Admin: " + offer.id], function (error, results, fields) { });
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Accepted Offer From Admin: " + offer.id]);
 			}
 		});
 	}else{
@@ -495,6 +512,8 @@ manager.on('sentOfferChanged', (offer, oldState) => {
 			connection.query(`SELECT Users.ID AS UID, Users.Coins AS Wallet, Sum(TransactionItems.Coins) AS Coins FROM Transactions INNER JOIN Users INNER JOIN TransactionItems WHERE Users.ID = Transactions.UID AND TransactionItems.TransactionID = Transactions.ID AND Transactions.OfferID = ?`, [offer.id], function (error, results, fields) {
 				connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?`, [(results[0].Wallet + results[0].Coins), results[0].UID]);
 			});
+		}else if (offer.state == 8 || offer.state == 7  && offer.itemsToGive.length > 0){
+			connection.query(`UPDATE Users SET Coins = (SELECT (SELECT SUM(Coins) FROM TransactionItems WHERE TransactionID = (SELECT ID FROM Transactions WHERE Transactions.OfferID = ?)) + (SELECT Coins WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?))) WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?)`, [offer.id, offer.id, offer.id]);
 		}
 	});
 });
@@ -509,14 +528,14 @@ function SendTradeOffer(offer, UID, TransactionType, items){
 
 		offer.send((err, status) => {
 			if (err) {
-				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
+				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err]);
 			}
 			connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) {
 				for (var item in items){
 					if (TransactionType == "Deposit"){
-						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT BuyPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name], function (error, results, fields) {});
+						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT BuyPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
 					}else{
-						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name], function (error, results, fields) {});
+						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
 					}
 				}
 			});
