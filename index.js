@@ -309,7 +309,7 @@ io.on('connection', function(socket){
 					});
 				});
 
-				socket.on('withraw', function(items){
+				socket.on('withdraw', function(items){
 					if (items.length == 0){
 						SendAlert('No selected items', 'Add items to your cart!');
 						return false;
@@ -482,7 +482,7 @@ function sendOffer(UID, items, isDeposit, code) {
 
 								connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(Wallet-Total), UID]);
 
-								SendTradeOffer(offer, UID, "Withraw", items);
+								SendTradeOffer(offer, UID, "Withdraw", items);
 							}
 						});
 					}
