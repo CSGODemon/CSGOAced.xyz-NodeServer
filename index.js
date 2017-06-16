@@ -315,7 +315,7 @@ io.on('connection', function(socket){
 						return false;
 					}
 					
-					connection.query(`SELECT (SELECT Trade_URL FROM Users WHERE ID = ?) AS Trade_URL, (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ?) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
+					connection.query(`SELECT (SELECT Trade_URL FROM Users WHERE ID = ?) AS Trade_URL, (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ? AND Transactions.Status = 3) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
 						trade_url = results[0].Trade_URL;
 						total_deposited = results[0].TotalDeposited;
 						total_betted = results[0].TotalBetted;
