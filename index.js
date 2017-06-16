@@ -315,13 +315,23 @@ io.on('connection', function(socket){
 						return false;
 					}
 					
-					connection.query(`SELECT Trade_URL FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
-						for (var row in results) {
-							trade_url = results[row].Trade_URL;
-						}
+					connection.query(`SELECT (SELECT Trade_URL FROM Users WHERE ID = ?) AS Trade_URL, (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ?) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
+						trade_url = results[0].Trade_URL;
+						total_deposited = results[0].TotalDeposited;
+						total_betted = results[0].TotalBetted;
 
 						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
 							socket.emit('tradeurl');
+							return false;
+						}
+
+						if(!total_deposited || total_deposited < 1000){
+							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw");
+							return false;
+						}
+
+						if(!total_betted || total_betted < 1000){
+							SendAlert("Unable to Withdraw", "You must bet 500 coins before withdraw");
 							return false;
 						}
 
