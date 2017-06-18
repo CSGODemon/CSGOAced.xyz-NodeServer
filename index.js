@@ -325,7 +325,7 @@ io.on('connection', function(socket){
 							return false;
 						}
 
-						if(!total_deposited || total_deposited < 1000){
+						if(!total_deposited || total_deposited < 500){
 							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw");
 							return false;
 						}
