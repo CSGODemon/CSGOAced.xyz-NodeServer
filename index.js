@@ -390,9 +390,9 @@ function SendOffer(UID, items, isDeposit, socket) {
 	}
 
 	connection.query(`SELECT Trade_URL, Steam64, Coins FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
-		Wallet = results[0].Coins;
-		steam64 = results[0].Steam64;
-		Trade_URL = results[0].Trade_URL;
+		var Wallet = results[0].Coins;
+		var steam64 = results[0].Steam64;
+		var Trade_URL = results[0].Trade_URL;
 
 		if(!Trade_URL || Trade_URL.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(Trade_URL))){
 			socket.emit('tradeurl');
