@@ -200,20 +200,15 @@ io.on('connection', function(socket){
 										connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [Wallet, CUser.id], function (error, results, fields) {
 											connection.query(`UPDATE CoinflipHistory SET UserID2 = ?, Ammount = ?, Fee = ?, IsFinished = 1 WHERE ID = ?;`, [CUser.id, Ammount, Fee, BetID], function (error, results, fields) {
 												connection.query(`INSERT INTO CoinflipResultHistory (CoinflipID, WinnerID) VALUES (?, ?);`, [BetID, WinnerUID], function (error, results, fields) {
-													connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
-														for (var row in results) {
-															WinnerCoins = results[row].Coins;
-														}
-														connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(WinnerCoins + Ammount), WinnerUID], function (error, results, fields) {
-															io.emit('flip', {
-																id: BetID,
-																avatar1: Avatar,
-																avatar2: CUser.avatar,
-																ammount: Ammount,
-																winner: Winner,
-																winnerUID: WinnerUID,
-																isFinished: true
-															});
+													connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) + ?) WHERE ID = ?;`, [Ammount, WinnerUID], function (error, results, fields) {
+														io.emit('flip', {
+															id: BetID,
+															avatar1: Avatar,
+															avatar2: CUser.avatar,
+															ammount: Ammount,
+															winner: Winner,
+															winnerUID: WinnerUID,
+															isFinished: true
 														});
 													});
 												});
@@ -335,7 +330,7 @@ io.on('connection', function(socket){
 							return false;
 						}
 
-						const code = Math.floor(Math.random()*10000);
+						const code = Math.floor(Math.random() * 10000 + 1000);
 						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
 						sendOffer(CUser.id, items, false, code);
 					});
@@ -490,7 +485,7 @@ function sendOffer(UID, items, isDeposit, code) {
 
 								if (i != items.length){ return false; }
 
-								connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [(Wallet-Total), UID]);
+								connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
 
 								SendTradeOffer(offer, UID, "Withdraw", items);
 							}
@@ -519,8 +514,8 @@ manager.on('newOffer', (offer) => {
 manager.on('sentOfferChanged', (offer, oldState) => {
 	connection.query(`UPDATE Transactions SET Status = ? WHERE OfferID = ?`, [offer.state, offer.id], function (error, results, fields) {
 		if (offer.state == 3 && offer.itemsToReceive.length > 0){
-			connection.query(`SELECT Users.ID AS UID, Users.Coins AS Wallet, Sum(TransactionItems.Coins) AS Coins FROM Transactions INNER JOIN Users INNER JOIN TransactionItems WHERE Users.ID = Transactions.UID AND TransactionItems.TransactionID = Transactions.ID AND Transactions.OfferID = ?`, [offer.id], function (error, results, fields) {
-				connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?`, [(results[0].Wallet + results[0].Coins), results[0].UID]);
+			connection.query(`SELECT Users.ID AS UID, Sum(TransactionItems.Coins) AS Coins FROM Transactions INNER JOIN Users INNER JOIN TransactionItems WHERE Users.ID = Transactions.UID AND TransactionItems.TransactionID = Transactions.ID AND Transactions.OfferID = ?`, [offer.id], function (error, results, fields) {
+				connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) + ?) WHERE ID = ?`, [results[0].Coins, results[0].UID]);
 			});
 		}else if (offer.state == 8 || offer.state == 7  && offer.itemsToGive.length > 0){
 			connection.query(`UPDATE Users SET Coins = (SELECT (SELECT SUM(Coins) FROM TransactionItems WHERE TransactionID = (SELECT ID FROM Transactions WHERE Transactions.OfferID = ?)) + (SELECT Coins WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?))) WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?)`, [offer.id, offer.id, offer.id]);
