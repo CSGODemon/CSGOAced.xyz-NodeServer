@@ -102,10 +102,10 @@ io.on('connection', function(socket){
 
 									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice]);
 								}
-								SendSuccess("Success", "Skins Price Refreshed Successfully!");
+								SendSuccess("Success", "Skins Price Refreshed Successfully!", socket);
 								connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (?)`, [CUser.id]);
 							}else{
-								SendAlert("Error", "Error Refreshing Skins Price!");
+								SendAlert("Error", "Error Refreshing Skins Price!", socket);
 							}
 						})
 					});
@@ -125,17 +125,17 @@ io.on('connection', function(socket){
 				socket.on('place bet', function(ammount){
 
 					if (isNaN(ammount)){
-						SendAlert("Invalid Number!", "Please enter a valid Number!");
+						SendAlert("Invalid Number!", "Please enter a valid Number!", socket);
 						return false;
 					}
 
 					if (ammount < 50){
-						SendAlert("Not Enought Coins!", "Minimum ammount is 50 coins!");
+						SendAlert("Not Enought Coins!", "Minimum ammount is 50 coins!", socket);
 						return false;
 					}
 
 					if (ammount > 100000){
-						SendAlert("Too Many Coins!", "Maximum ammount is 100000 coins!");
+						SendAlert("Too Many Coins!", "Maximum ammount is 100000 coins!", socket);
 						return false;
 					}
 
@@ -144,7 +144,7 @@ io.on('connection', function(socket){
 							Coins = results[row].Coins;
 						}
 						if (isNaN(Coins) || Coins < ammount){
-							SendAlert("Not Enought Coins!", "Deposit to get more coins!");
+							SendAlert("Not Enought Coins!", "Deposit to get more coins!", socket);
 							return false;
 						}
 						Wallet = (Coins - ammount);
@@ -191,7 +191,7 @@ io.on('connection', function(socket){
 											Coins = results[row].Coins;
 										}
 										if (isNaN(Coins) || Coins < BetAmmount){
-											SendAlert("Not Enought Coins!", "Deposit to get more coins!");
+											SendAlert("Not Enought Coins!", "Deposit to get more coins!", socket);
 											return false;
 										}
 
@@ -216,7 +216,7 @@ io.on('connection', function(socket){
 										});
 									});
 								}else{
-									SendAlert("Bet Error", "<span class='glyphicon glyphicon-remove'></span> Can't place a bet against yourself");
+									SendAlert("Bet Error", "<span class='glyphicon glyphicon-remove'></span> Can't place a bet against yourself", socket);
 								}
 								return false;
 							}
@@ -238,7 +238,7 @@ io.on('connection', function(socket){
 
 				socket.on('referal', function(refcode){
 					if(!refcode || refcode.length > 7){
-						SendAlert('Invalid Referal Code', 'Maximum Referal Code Length is 7 Characters');
+						SendAlert('Invalid Referal Code', 'Maximum Referal Code Length is 7 Characters', socket);
 						return false;
 					}
 					
@@ -248,30 +248,30 @@ io.on('connection', function(socket){
 						if (results[0].Repeated == 0){
 							connection.query(`UPDATE Users SET RefCode = ? WHERE ID = ?`, [refcode, CUser.id], function (error, results, fields) {
 								connection.query(`INSERT INTO RefCodeHistory (UserID, RefCode) VALUES (?, ?)`, [CUser.id, refcode], function (error, results, fields) {
-									SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated");
+									SendSuccess("Referal Code", "Your Referal Code Was Sucessfully Updated", socket);
 								});
 							});
 						}else{
-							SendAlert("Duplicate Code", "This Referal Code is Already in Use");
+							SendAlert("Duplicate Code", "This Referal Code is Already in Use", socket);
 						}
 					});
 				});
 
 				socket.on('trade_url', function(trade_url){
 					if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-						SendAlert('Invalid Trade URL', 'Provide a valid Trade URL');
+						SendAlert('Invalid Trade URL', 'Provide a valid Trade URL', socket);
 						return false;
 					}
 
 					connection.query(`UPDATE Users SET Trade_URL = ? WHERE ID = ?;`, [trade_url, CUser.id], function (error, results, fields) {
-						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated");
+						SendSuccess("Trade URL", "Your Trade URL Was Sucessfully Updated", socket);
 						connection.query(`INSERT INTO TradeURLHistory (UserID, Trade_URL) VALUES (?, ?)`, [CUser.id, trade_url]);
 					});
 				});
 
 				socket.on('message', function(msg){
 					if (msg.length > 50){
-						SendAlert("Message Lenght", "You can only write 50 characters");
+						SendAlert("Message Lenght", "You can only write 50 characters", socket);
 						return false;
 					}
 
@@ -284,7 +284,7 @@ io.on('connection', function(socket){
 
 				socket.on('deposit', function(items){
 					if (items.length == 0){
-						SendAlert('No selected items', 'Add items to your cart!');
+						SendAlert('No selected items', 'Add items to your cart!', socket);
 						return false;
 					}
 
@@ -299,14 +299,13 @@ io.on('connection', function(socket){
 						}
 
 						const code = Math.floor(Math.random()*10000);
-						SendSuccess("Sucess", "Trade Offer Successfully Sent. <br /> Trade code: " + code);
-						sendOffer(CUser.id, items, true, code);
+						SendOffer(CUser.id, items, true, code, socket);
 					});
 				});
 
 				socket.on('withdraw', function(items){
 					if (items.length == 0){
-						SendAlert('No selected items', 'Add items to your cart!');
+						SendAlert('No selected items', 'Add items to your cart!', socket);
 						return false;
 					}
 					
@@ -321,33 +320,32 @@ io.on('connection', function(socket){
 						}
 
 						if(!total_deposited || total_deposited < 500){
-							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw");
+							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw", socket);
 							return false;
 						}
 
 						if(!total_betted || total_betted < 1000){
-							SendAlert("Unable to Withdraw", "You must bet 500 coins before withdraw");
+							SendAlert("Unable to Withdraw", "You must bet 500 coins before withdraw", socket);
 							return false;
 						}
 
 						const code = Math.floor(Math.random() * 10000 + 1000);
-						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
-						sendOffer(CUser.id, items, false, code);
+						sendOffer(CUser.id, items, false, code, socket);
 					});
 				});
 			}else if (CUser.Role == "Banned"){
-				SendAlert("Permanent Ban!", "You Have Been Permanently Banned from CSGOAced.xyz.");
+				SendAlert("Permanent Ban!", "You Have Been Permanently Banned from CSGOAced.xyz.", socket);
 			}else{
 				socket.on('place bet', function(){
-					SendAlert("No Login", "Login to Place Bets");
+					SendAlert("No Login", "Login to Place Bets", socket);
 				});
 
 				socket.on('join bet', function(){
-					SendAlert("No Login", "Login to Join Bets");
+					SendAlert("No Login", "Login to Join Bets", socket);
 				});
 
 				socket.on('message', function(){
-					SendAlert("No Login", "Login to Send Messages!");
+					SendAlert("No Login", "Login to Send Messages!", socket);
 				});
 			}
 		});
@@ -361,47 +359,47 @@ io.on('connection', function(socket){
 	function BotMSG(msg){
 		socket.emit('message', { avatar: bot.avatar, text: msg });
 	}
-
-	function SendAlert(Title, Content){
-		socket.emit('alert', {
-			closeIcon: true,
-			closeIconClass: 'fa fa-close',
-			backgroundDismiss: true,
-			title: Title,
-			content: Content,
-			animation: 'RotateXR',
-			closeAnimation: 'RotateXR',
-			buttons: {
-				ok: {
-					btnClass: 'btn-red',
-					keys: ['enter'],
-					action: function(){
-					}
-				}
-			}
-		});
-	}
-
-	function SendSuccess(Title, Content){
-		socket.emit('alert', {
-			closeIcon: true,
-			closeIconClass: 'fa fa-close',
-			backgroundDismiss: true,
-			title: Title,
-			content: Content,
-			animation: 'RotateXR',
-			closeAnimation: 'RotateXR',
-			buttons: {
-				ok: {
-					btnClass: 'btn-green',
-					keys: ['enter'],
-					action: function(){
-					}
-				}
-			}
-		});
-	}
 });
+
+function SendAlert(Title, Content, socket){
+	socket.emit('alert', {
+		closeIcon: true,
+		closeIconClass: 'fa fa-close',
+		backgroundDismiss: true,
+		title: Title,
+		content: Content,
+		animation: 'RotateXR',
+		closeAnimation: 'RotateXR',
+		buttons: {
+			ok: {
+				btnClass: 'btn-red',
+				keys: ['enter'],
+				action: function(){
+				}
+			}
+		}
+	});
+}
+
+function SendSuccess(Title, Content, socket){
+	socket.emit('alert', {
+		closeIcon: true,
+		closeIconClass: 'fa fa-close',
+		backgroundDismiss: true,
+		title: Title,
+		content: Content,
+		animation: 'RotateXR',
+		closeAnimation: 'RotateXR',
+		buttons: {
+			ok: {
+				btnClass: 'btn-green',
+				keys: ['enter'],
+				action: function(){
+				}
+			}
+		}
+	});
+}
 
 client.on('loggedOn', () => {
 	connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", "Login")`);
@@ -414,7 +412,7 @@ client.on('webSession', (sessionid, cookies) => {
 	community.startConfirmationChecker(10000, Settings.Bot.identitySecret);
 });
 
-function sendOffer(UID, items, isDeposit, code) {
+function sendOffer(UID, items, isDeposit, code, socket) {
 	connection.query(`SELECT Trade_URL, Steam64, Coins FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
 		Wallet = results[0].Coins;
 		steam64 = results[0].Steam64;
@@ -448,9 +446,12 @@ function sendOffer(UID, items, isDeposit, code) {
 						}
 					}
 
-					if (i != items.length){ return false; }
+					if (i != items.length){
+						SendAlert("Error", "Some items may not be avaliable now. <br />Please Refresh Your Inventory!", socket);
+						return false;
+					}
 
-					SendTradeOffer(offer, UID, "Deposit", items);
+					SendTradeOffer(offer, UID, "Deposit", items, socket);
 				}
 			});
 		}
@@ -464,7 +465,10 @@ function sendOffer(UID, items, isDeposit, code) {
 					i2++;
 					Total+= results[0].SellPrice;
 					if (i2 == items.length){
-						if (Total > Wallet){ return; }
+						if (Total > Wallet){
+							SendAlert("Error", "You don't have enought coins!", socket);
+							return;
+						}
 
 						manager.loadInventory(appid, contextid, true, (err, myInv) => {
 							if (err) {
@@ -483,11 +487,14 @@ function sendOffer(UID, items, isDeposit, code) {
 									}
 								}
 
-								if (i != items.length){ return false; }
+								if (i != items.length){
+									SendAlert("Error", "Some items may not be avaliable now. <br />Please Refresh Bot's Inventory!", socket);
+									return false;
+								}
 
 								connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
 
-								SendTradeOffer(offer, UID, "Withdraw", items);
+								SendTradeOffer(offer, UID, "Withdraw", items, socket);
 							}
 						});
 					}
@@ -523,11 +530,12 @@ manager.on('sentOfferChanged', (offer, oldState) => {
 	});
 });
 
-function SendTradeOffer(offer, UID, TransactionType, items){
+function SendTradeOffer(offer, UID, TransactionType, items, socket){
 	offer.getUserDetails((err, me, them) => {
 		if(err) return;
 
 		if(them.escrowDays > 0) {
+			SendAlert("No Steam Mobile Authenticator", "You must enable Steam Mobile Authenticator Before " + TransactionType , socket);
 			offer.cancel();
 		}
 
@@ -535,6 +543,7 @@ function SendTradeOffer(offer, UID, TransactionType, items){
 			if (err) {
 				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err]);
 			}
+			SendSuccess("Sucess", "Trade Offer Successfully Sent. <br /> Trade code: " + code, socket);
 			connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) {
 				for (var item in items){
 					if (TransactionType == "Deposit"){
