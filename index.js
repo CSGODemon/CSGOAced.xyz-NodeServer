@@ -283,41 +283,13 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('deposit', function(items){
-					if (items.length == 0){
-						SendAlert('No selected items', 'Add items to your cart!', socket);
-						return false;
-					}
-
-					connection.query(`SELECT Trade_URL FROM Users WHERE ID = ?`, [User.id], function (error, results, fields) {
-						for (var row in results) {
-							trade_url = results[row].Trade_URL;
-						}
-
-						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-							socket.emit('tradeurl');
-							return false;
-						}
-
-						const code = Math.floor(Math.random()*10000);
-						SendOffer(CUser.id, items, true, code, socket);
-					});
+					SendOffer(CUser.id, items, true, socket);
 				});
 
 				socket.on('withdraw', function(items){
-					if (items.length == 0){
-						SendAlert('No selected items', 'Add items to your cart!', socket);
-						return false;
-					}
-					
-					connection.query(`SELECT (SELECT Trade_URL FROM Users WHERE ID = ?) AS Trade_URL, (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ? AND Transactions.Status = 3) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
-						trade_url = results[0].Trade_URL;
+					connection.query(`SELECT (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ? AND Transactions.Status = 3) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
 						total_deposited = results[0].TotalDeposited;
 						total_betted = results[0].TotalBetted;
-
-						if(!trade_url || trade_url.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(trade_url))){
-							socket.emit('tradeurl');
-							return false;
-						}
 
 						if(!total_deposited || total_deposited < 500){
 							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw", socket);
@@ -329,8 +301,7 @@ io.on('connection', function(socket){
 							return false;
 						}
 
-						const code = Math.floor(Math.random() * 10000 + 1000);
-						sendOffer(CUser.id, items, false, code, socket);
+						SendOffer(CUser.id, items, false, socket);
 					});
 				});
 			}else if (CUser.Role == "Banned"){
@@ -412,13 +383,21 @@ client.on('webSession', (sessionid, cookies) => {
 	community.startConfirmationChecker(10000, Settings.Bot.identitySecret);
 });
 
-function sendOffer(UID, items, isDeposit, code, socket) {
+function SendOffer(UID, items, isDeposit, socket) {
+	if (items.length == 0){
+		SendAlert('No selected items', 'Add items to your cart!', socket);
+		return false;
+	}
+
 	connection.query(`SELECT Trade_URL, Steam64, Coins FROM Users WHERE ID = ?`, [UID], function (error, results, fields) {
 		Wallet = results[0].Coins;
 		steam64 = results[0].Steam64;
 		Trade_URL = results[0].Trade_URL;
 
-		if(!Trade_URL || Trade_URL.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(Trade_URL))){ return false; }
+		if(!Trade_URL || Trade_URL.length > 80 || !(/steamcommunity\.com\/tradeoffer\/new\/\?partner=[0-9]*&token=[a-zA-Z0-9_-]*/i.exec(Trade_URL))){
+			socket.emit('tradeurl');
+			return false;
+		}
 
 		const partner = steam64;
 		const appid = 730;
@@ -426,14 +405,11 @@ function sendOffer(UID, items, isDeposit, code, socket) {
 
 		const offer = manager.createOffer(Trade_URL);
 
-		offer.setMessage(`Where's your security code: ${code}`);
-
 		if (isDeposit == true){
 			manager.loadUserInventory(partner, appid, contextid, true, (err, theirInv) => {
 				if (err) {
 					connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err]);
 				} else {
-					if (theirInv.length == 0){ return false; }
 
 					var i = 0;
 
@@ -474,7 +450,6 @@ function sendOffer(UID, items, isDeposit, code, socket) {
 							if (err) {
 								connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err], function (error, results, fields) { });
 							} else {
-								if (myInv.length == 0){ return false; }
 
 								var i = 0;
 
@@ -530,18 +505,25 @@ manager.on('sentOfferChanged', (offer, oldState) => {
 	});
 });
 
-function SendTradeOffer(offer, UID, TransactionType, items, socket){
+function SendTradeOffer(offer, UID, TransactionType, items, socket, code){
 	offer.getUserDetails((err, me, them) => {
-		if(err) return;
+		if(err){
+			SendAlert("Error Sending Trade Offer", err.message, socket);
+			return;	
+		}
 
 		if(them.escrowDays > 0) {
 			SendAlert("No Steam Mobile Authenticator", "You must enable Steam Mobile Authenticator Before " + TransactionType , socket);
 			offer.cancel();
 		}
 
+		const code = Math.floor(Math.random() * 10000 + 1000);
+		offer.setMessage(`Where's your security code: ${code}`);
+
 		offer.send((err, status) => {
 			if (err) {
 				connection.query(`INSERT INTO NodeLog (Type, Description) VALUES ("Steam", ?)`, ["Error Loading Inventory: " + err]);
+				SendAlert("Error", "Error Sending Trade Offer!", socket);
 			}
 			SendSuccess("Sucess", "Trade Offer Successfully Sent. <br /> Trade code: " + code, socket);
 			connection.query(`INSERT INTO Transactions (Type, UID, OfferID, Status) VALUES (?, ?, ?, ?)`, [TransactionType, UID, offer.id, offer.state], function (error, results, fields) {
