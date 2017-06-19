@@ -427,7 +427,7 @@ function SendOffer(UID, items, isDeposit, socket) {
 						return false;
 					}
 
-					SendTradeOffer(offer, UID, "Deposit", items, socket);
+					SendTradeOffer(offer, UID, "Deposit", items, socket, 0);
 				}
 			});
 		}
@@ -467,9 +467,7 @@ function SendOffer(UID, items, isDeposit, socket) {
 									return false;
 								}
 
-								connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
-
-								SendTradeOffer(offer, UID, "Withdraw", items, socket);
+								SendTradeOffer(offer, UID, "Withdraw", items, socket, Total);
 							}
 						});
 					}
@@ -505,7 +503,7 @@ manager.on('sentOfferChanged', (offer, oldState) => {
 	});
 });
 
-function SendTradeOffer(offer, UID, TransactionType, items, socket, code){
+function SendTradeOffer(offer, UID, TransactionType, items, socket, code, Total){
 	offer.getUserDetails((err, me, them) => {
 		if(err){
 			SendAlert("Error Sending Trade Offer", err.message, socket);
@@ -532,6 +530,7 @@ function SendTradeOffer(offer, UID, TransactionType, items, socket, code){
 						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT BuyPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
 					}else{
 						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
+						connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
 					}
 				}
 			});
