@@ -299,7 +299,7 @@ io.on('connection', function(socket){
 						}
 
 						const code = Math.floor(Math.random()*10000);
-						SendSuccess("Sucess", "Trade Offer Successfully Send. <br /> Trade code: " + code);
+						SendSuccess("Sucess", "Trade Offer Successfully Sent. <br /> Trade code: " + code);
 						sendOffer(CUser.id, items, true, code);
 					});
 				});
