@@ -288,8 +288,8 @@ io.on('connection', function(socket){
 
 				socket.on('withdraw', function(items){
 					connection.query(`SELECT (SELECT SUM(Ammount + Fee) FROM CoinflipHistory WHERE (UserID1 = ? OR UserID2 = ?) AND IsFinished = 1) AS TotalBetted, (SELECT SUM(TransactionItems.Coins) FROM TransactionItems INNER JOIN Transactions WHERE TransactionItems.TransactionID = Transactions.ID AND Transactions.Type = "Deposit" AND Transactions.UID = ? AND Transactions.Status = 3) AS TotalDeposited`, [User.id, User.id, User.id, User.id], function (error, results, fields) {
-						total_deposited = results[0].TotalDeposited;
-						total_betted = results[0].TotalBetted;
+						var total_deposited = results[0].TotalDeposited;
+						var total_betted = results[0].TotalBetted;
 
 						if(!total_deposited || total_deposited < 500){
 							SendAlert("Unable to Withdraw", "You must deposit 500 coins before withdraw", socket);
@@ -439,7 +439,7 @@ function SendOffer(UID, items, isDeposit, socket) {
 			for (i = 0; i < items.length; i++){
 				connection.query(`SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?`, [items[i].market_name], function (error, results, fields) {
 					i2++;
-					Total+= results[0].SellPrice;
+					Total += results[0].SellPrice;
 					if (i2 == items.length){
 						if (Total > Wallet){
 							SendAlert("Error", "You don't have enought coins!", socket);
