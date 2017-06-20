@@ -4,6 +4,7 @@ const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
 
 const Settings = require('./config.json');
+var schedule = require('node-schedule');
 var request = require("request");
 
 var io = require('socket.io').listen(3000);
@@ -80,36 +81,6 @@ io.on('connection', function(socket){
 			if (CUser.IsAuth && CUser.Role != "Banned"){
 
 				socket.emit('show place bet', CUser.avatar);
-
-				if (CUser.Role == "Admin"){
-					socket.on('refresh prices', function(){
-						request({
-							url: "https://api.csgofast.com/price/all",
-							json: true
-						}, function (error, response, body) {
-							if (!error && response.statusCode === 200) {
-
-								connection.query(`TRUNCATE TABLE SkinPrices;`);
-
-								for (var skin in body){
-									connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName = ?)
-														THEN
-															INSERT INTO Skins (MarketName) VALUES (?);
-														END IF;`,[skin, skin]);
-
-									var BuyPrice = body[skin] * Settings.Price.BuyMultiplier + Settings.Price.BuyGap;
-									var SellPrice = body[skin] * Settings.Price.SellMultiplier + Settings.Price.SellGap;
-
-									connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice]);
-								}
-								SendSuccess("Success", "Skins Price Refreshed Successfully!", socket);
-								connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (?)`, [CUser.id]);
-							}else{
-								SendAlert("Error", "Error Refreshing Skins Price!", socket);
-							}
-						})
-					});
-				}
 
 				socket.on('reload coins', function(coins){
 					connection.query(`SELECT Coins FROM Users WHERE ID = ?`, [CUser.id], function (error, results, fields) {
@@ -537,3 +508,28 @@ function SendTradeOffer(offer, UID, TransactionType, items, socket, code, Total)
 		});
 	});
 }
+
+var RefreshPrices = schedule.scheduleJob('30 5 * * *', function(){
+	request({
+		url: "https://api.csgofast.com/price/all",
+		json: true
+	}, function (error, response, body) {
+		if (!error && response.statusCode === 200) {
+
+			connection.query(`TRUNCATE TABLE SkinPrices;`);
+
+			for (var skin in body){
+				connection.query(  `IF NOT EXISTS(SELECT MarketName FROM Skins WHERE MarketName = ?)
+									THEN
+										INSERT INTO Skins (MarketName) VALUES (?);
+									END IF;`,[skin, skin]);
+
+				var BuyPrice = body[skin] * Settings.Price.BuyMultiplier + Settings.Price.BuyGap;
+				var SellPrice = body[skin] * Settings.Price.SellMultiplier + Settings.Price.SellGap;
+
+				connection.query(`INSERT INTO SkinPrices (SkinMarketName, BuyPrice, SellPrice) VALUES (?, ?, ?);`, [skin, BuyPrice, SellPrice]);
+			}
+			connection.query(`INSERT INTO RefreshPriceHistory (UserID) VALUES (1)`);
+		}
+	})
+});
