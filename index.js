@@ -166,9 +166,8 @@ io.on('connection', function(socket){
 											return false;
 										}
 
-										Wallet = (Coins - BetAmmount);
-										socket.emit('update coins', Wallet);
-										connection.query(`UPDATE Users SET Coins = ? WHERE ID = ?;`, [Wallet, CUser.id], function (error, results, fields) {
+										socket.emit('update coins', (Coins - BetAmmount));
+										connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [BetAmmount, CUser.id], function (error, results, fields) {
 											connection.query(`UPDATE CoinflipHistory SET UserID2 = ?, Ammount = ?, Fee = ?, IsFinished = 1 WHERE ID = ?;`, [CUser.id, Ammount, Fee, BetID], function (error, results, fields) {
 												connection.query(`INSERT INTO CoinflipResultHistory (CoinflipID, WinnerID) VALUES (?, ?);`, [BetID, WinnerUID], function (error, results, fields) {
 													connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) + ?) WHERE ID = ?;`, [Ammount, WinnerUID], function (error, results, fields) {
@@ -398,7 +397,7 @@ function SendOffer(UID, items, isDeposit, socket) {
 						return false;
 					}
 
-					SendTradeOffer(offer, UID, "Deposit", items, socket, 0);
+					SendTradeOffer(offer, UID, "Deposit", items, socket);
 				}
 			});
 		}
@@ -464,17 +463,13 @@ manager.on('newOffer', (offer) => {
 
 manager.on('sentOfferChanged', (offer, oldState) => {
 	connection.query(`UPDATE Transactions SET Status = ? WHERE OfferID = ?`, [offer.state, offer.id], function (error, results, fields) {
-		if (offer.state == 3 && offer.itemsToReceive.length > 0){
-			connection.query(`SELECT Users.ID AS UID, Sum(TransactionItems.Coins) AS Coins FROM Transactions INNER JOIN Users INNER JOIN TransactionItems WHERE Users.ID = Transactions.UID AND TransactionItems.TransactionID = Transactions.ID AND Transactions.OfferID = ?`, [offer.id], function (error, results, fields) {
-				connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) + ?) WHERE ID = ?`, [results[0].Coins, results[0].UID]);
-			});
-		}else if (offer.state == 8 || offer.state == 7  && offer.itemsToGive.length > 0){
+		if ((offer.state == 3 && offer.itemsToReceive.length > 0) || ((offer.state == 8 || offer.state == 7)  && offer.itemsToGive.length > 0)){
 			connection.query(`UPDATE Users SET Coins = (SELECT (SELECT SUM(Coins) FROM TransactionItems WHERE TransactionID = (SELECT ID FROM Transactions WHERE Transactions.OfferID = ?)) + (SELECT Coins WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?))) WHERE ID = (SELECT UID FROM Transactions WHERE Transactions.OfferID = ?)`, [offer.id, offer.id, offer.id]);
 		}
 	});
 });
 
-function SendTradeOffer(offer, UID, TransactionType, items, socket, code, Total){
+function SendTradeOffer(offer, UID, TransactionType, items, socket, Total){
 	offer.getUserDetails((err, me, them) => {
 		if(err){
 			SendAlert("Error Sending Trade Offer", err.message, socket);
@@ -486,7 +481,7 @@ function SendTradeOffer(offer, UID, TransactionType, items, socket, code, Total)
 			offer.cancel();
 		}
 
-		const code = Math.floor(Math.random() * 10000 + 1000);
+		const code = Math.floor(Math.random() * 1000 + 1000);
 		offer.setMessage(`Where's your security code: ${code}`);
 
 		offer.send((err, status) => {
@@ -501,8 +496,10 @@ function SendTradeOffer(offer, UID, TransactionType, items, socket, code, Total)
 						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT BuyPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
 					}else{
 						connection.query(`INSERT INTO TransactionItems (TransactionID, SkinMarketName, AssetID, ClassID, Coins) VALUES ((SELECT ID FROM Transactions WHERE OfferID = ?), ?, ?, ?, (SELECT SellPrice FROM SkinPrices WHERE SkinMarketName = ?))`, [offer.id, items[item].market_name, items[item].assetID, items[item].classID, items[item].market_name]);
-						connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
 					}
+				}
+				if (TransactionType == "Withdraw"){
+					connection.query(`UPDATE Users SET Coins = (SELECT (Select Coins) - ?) WHERE ID = ?;`, [Total, UID]);
 				}
 			});
 		});
