@@ -195,7 +195,7 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('coinflip history', function(){
-					connection.query(`SELECT CoinflipResultHistory.CoinflipID AS ID, CoinflipHistory.Ammount AS Ammount, CoinflipResultHistory.CreateTimestamp AS CreateTimestamp FROM CoinflipResultHistory INNER JOIN CoinflipHistory WHERE CoinflipResultHistory.WinnerID = ? AND CoinflipResultHistory.CoinflipID = CoinflipHistory.ID ORDER BY CoinflipHistory.ID DESC`, [User.id] , function (error, results, fields) {
+					connection.query(`SELECT DISTINCT CoinflipHistory.ID AS ID, (CASE WHEN CoinflipResultHistory.WinnerID = ? THEN 1 ELSE 0 END) AS Won, (CoinflipHistory.Ammount + CoinflipHistory.Fee) AS Ammount, CoinflipHistory.CreateTimestamp AS CreateTimestamp FROM CoinflipHistory INNER JOIN CoinflipResultHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 1 AND CoinflipHistory.UserID1 = Users.ID AND CoinflipHistory.ID = CoinflipResultHistory.CoinflipID AND CoinflipHistory.UserID1 = ? OR CoinflipHistory.UserID2 = ? ORDER BY CoinflipHistory.ID DESC`, [User.id, User.id, User.id] , function (error, results, fields) {
 						socket.emit('coinflip history', results);
 					});
 				});
