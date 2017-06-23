@@ -1,4 +1,4 @@
-const SteamUser = require('steam-user');
+﻿const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
@@ -195,7 +195,7 @@ io.on('connection', function(socket){
 				});
 
 				socket.on('coinflip history', function(){
-					connection.query(`SELECT DISTINCT CoinflipHistory.ID AS ID, (CASE WHEN CoinflipResultHistory.WinnerID = ? THEN 1 ELSE 0 END) AS Won, (CoinflipHistory.Ammount + CoinflipHistory.Fee) AS Ammount, CoinflipHistory.CreateTimestamp AS CreateTimestamp FROM CoinflipHistory INNER JOIN CoinflipResultHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 1 AND CoinflipHistory.UserID1 = Users.ID AND CoinflipHistory.ID = CoinflipResultHistory.CoinflipID AND CoinflipHistory.UserID1 = ? OR CoinflipHistory.UserID2 = ? ORDER BY CoinflipHistory.ID DESC`, [User.id, User.id, User.id] , function (error, results, fields) {
+					connection.query(`SELECT DISTINCT CoinflipHistory.ID AS ID, (CASE WHEN CoinflipResultHistory.WinnerID = ? THEN 1 ELSE 0 END) AS Won, (CoinflipHistory.Ammount + CoinflipHistory.Fee) AS Ammount, CoinflipHistory.CreateTimestamp AS CreateTimestamp FROM CoinflipHistory INNER JOIN CoinflipResultHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 1 AND CoinflipHistory.UserID1 = Users.ID AND CoinflipHistory.ID = CoinflipResultHistory.CoinflipID AND (CoinflipHistory.UserID1 = ? OR CoinflipHistory.UserID2 = ?) ORDER BY CoinflipHistory.ID DESC;`, [User.id, User.id, User.id] , function (error, results, fields) {
 						socket.emit('coinflip history', results);
 					});
 				});
