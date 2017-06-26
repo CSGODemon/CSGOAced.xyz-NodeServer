@@ -12,7 +12,8 @@
 		"password": "steam_password",
 		"sharedSecret": "steam_shared_secret",
 		"identitySecret": "steam_identitySecret",
-		"admin": "steam_admin_id64"
+		"admin": "steam_admin_id64",
+		"RefreshPricelist": "30 5 * * *"
 	},
     "Coinflip": {
         "Fee": 0.1

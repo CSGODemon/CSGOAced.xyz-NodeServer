@@ -506,7 +506,7 @@ function SendTradeOffer(offer, UID, TransactionType, items, socket, Total){
 	});
 }
 
-var RefreshPrices = schedule.scheduleJob('30 5 * * *', function(){
+var RefreshPrices = schedule.scheduleJob(Settings.Bot.RefreshPricelist, function(){
 	request({
 		url: "https://api.csgofast.com/price/all",
 		json: true
