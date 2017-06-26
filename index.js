@@ -49,9 +49,13 @@ io.on('connection', function(socket){
 	UsersOnline++;
 	io.emit('update online', UsersOnline);
 
-	BotMSG("Welcome To CSGOAced!");
-
 	socket.emit('auth user');
+
+	connection.query(`SELECT Users.Avatar AS Avatar, ChatHistory.Message AS MSG FROM ChatHistory, Users WHERE ChatHistory.UserID = Users.ID ORDER BY ChatHistory.ID DESC LIMIT 8;`, function (error, results, fields) {
+		for (row = results.length - 1; row > 0; row--) {
+			io.emit('message', { avatar: results[row].Avatar, text: results[row].MSG });
+		}
+	});
 
 	connection.query(`SELECT DISTINCT CoinflipHistory.ID AS ID, Users.Avatar AS Avatar, CoinflipHistory.Ammount AS Ammount FROM CoinflipHistory INNER JOIN Users WHERE CoinflipHistory.IsFinished = 0 AND CoinflipHistory.UserID1 = Users.ID ORDER BY CoinflipHistory.Ammount DESC`, function (error, results, fields) {
 		for (var row in results) {
