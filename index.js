@@ -53,7 +53,7 @@ io.on('connection', function(socket){
 
 	connection.query(`SELECT Users.Avatar AS Avatar, ChatHistory.Message AS MSG FROM ChatHistory, Users WHERE ChatHistory.UserID = Users.ID ORDER BY ChatHistory.ID DESC LIMIT 8;`, function (error, results, fields) {
 		for (row = results.length - 1; row >= 0; row--) {
-			io.emit('message', { avatar: results[row].Avatar, text: results[row].MSG });
+			socket.emit('message', { avatar: results[row].Avatar, text: results[row].MSG });
 		}
 	});
 
